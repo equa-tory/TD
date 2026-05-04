@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        body { font-family: Segoe UI, Arial; margin: 16px; }
+        input { padding: 6px; width: 300px; font-size: 14px; }
+        button { margin: 8px 4px 0 0; padding: 8px 14px; cursor: pointer; }
+        .status { margin-top: 10px; color: green; display: none; }
+    </style>
+</head>
+<body>
+    <h3>Manager Config</h3>
+
+    <label>API URL:</label><br />
+    <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+    <br />
+    <button onclick="saveConfig()">Save</button>
+    <button onclick="loadCurrent()">Reload</button>
+    <div class="status" id="status">Saved!</div>
+
+    <script type="text/javascript">
+        function saveConfig() {
+            var val = document.getElementById('apiUrl').value;
+            window.external.SaveConfig('apiUrl', val);
+            var s = document.getElementById('status');
+            s.style.display = 'block';
+            setTimeout(function() { s.style.display = 'none'; }, 2000);
+        }
+
+        function loadCurrent() {
+            var val = window.external.GetConfig('apiUrl');
+            document.getElementById('apiUrl').value = val;
+        }
+
+        // Load existing value on startup
+        loadCurrent();
+    </script>
+</body>
+</html>

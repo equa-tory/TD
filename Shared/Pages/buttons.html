@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        body { font-family: Segoe UI, Arial; margin: 16px; }
+        .value { font-weight: bold; color: #005a9e; }
+    </style>
+</head>
+<body>
+    <h3>Buttons App</h3>
+    <p>API URL from config: <span class="value" id="apiUrl">loading...</span></p>
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="fetchTypes()">Get Ticket Types</button>
+    <div id="buttons"><span class="loading">Loading...</span></div>
+
+    <script type="text/javascript">
+        function refresh() {
+            var val = window.external.GetConfig('apiUrl');
+            document.getElementById('apiUrl').innerText = val || '(not set)';
+        }
+
+        refresh();
+
+        function fetchTypes() {
+            // var json = window.external.FetchSomething();
+                        var container = document.getElementById('buttons');
+            container.innerHTML = '<span class="loading">Loading ticket types...</span>';
+
+            try {
+                // var json = window.external.GetTicketTypes();
+                var json = window.external.FetchSomething();
+                var data;
+                try { data = JSON.parse(json); } catch(e) { data = eval('(' + json + ')'); }
+
+                if (data.error) {
+                    container.innerHTML = '<span class="error">' + data.error + '</span>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                var list = data;
+                if (!(list instanceof Array)) {
+                    if (data.results) list = data.results;
+                    else if (data.types) list = data.types;
+                    else list = [data];
+                }
+
+                for (var i = 0; i < list.length; i++) {
+                    var item = list[i];
+                    var id = item.id || item.slug || item.name || String(i);
+                    var title = item.title || item.name || item.display_name || id;
+                    var btn = document.createElement('button');
+
+                    if ('innerText' in btn) btn.innerText = title;
+                    else btn.textContent = title;
+
+                    (function(tid, ttitle){
+                        btn.onclick = function() {
+                            var printer = document.getElementById('printer').value;
+                            window.external.BookTicket(tid, ttitle, printer);
+                        };
+                    })(id, title);
+
+                    container.appendChild(btn);
+                }
+
+                if (list.length === 0) {
+                    container.innerHTML = '<span class="loading">No ticket types returned.</span>';
+                }
+
+            } catch (e) {
+                container.innerHTML = '<span class="error">' + e.message + '</span>';
+            }
+
+
+        }
+    </script>
+</body>
+</html>
