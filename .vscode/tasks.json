@@ -4,29 +4,46 @@
     {
       "label": "Build All",
       "type": "shell",
-      "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe TokenizerDesktop.sln",
-      "group": { "kind": "build", },
+      // "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe TokenizerDesktop.sln",
+      "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ManagerApp\\Manager.csproj ; C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ButtonsApp\\Buttons.csproj",
+      // "group": { "kind": "build", },
       "problemMatcher": "$msCompile"
     },
     {
       "label": "Build Manager App",
       "type": "shell",
       "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ManagerApp/Manager.csproj",
-      "group": { "kind": "build", },
+      // "group": { "kind": "build", },
       "problemMatcher": "$msCompile"
     },
     {
       "label": "Build Buttons App",
       "type": "shell",
       "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ButtonsApp\\Buttons.csproj",
-      "group": { "kind": "build", },
+      // "group": { "kind": "build", },
       "problemMatcher": "$msCompile"
     },
     {
       "label": "Run Buttons App",
       "type": "shell",
-      "command": "${workspaceFolder}\\ButtonsApp\\bin\\Debug\\Buttons.exe",
+      "command": "${workspaceFolder}\\bin\\Debug\\Buttons.exe",
       "dependsOn": "Build Buttons App",
+      "problemMatcher": [],
+      "group": { "kind": "build" },
+    },
+    {
+      "label": "Run Manager App",
+      "type": "shell",
+      "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe",
+      "dependsOn": "Build Buttons App",
+      "problemMatcher": [],
+      "group": { "kind": "build", },
+    },
+    {
+      "label": "Run All",
+      "type": "shell",
+      "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe ;& ${workspaceFolder}\\bin\\Debug\\Buttons.exe",
+      "dependsOn": "Build All",
       "problemMatcher": [],
       "group": { "kind": "build", },
     }

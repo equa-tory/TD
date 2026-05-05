@@ -5,36 +5,58 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
         body { font-family: Segoe UI, Arial; margin: 16px; }
-        input { padding: 6px; width: 300px; font-size: 14px; }
-        button { margin: 8px 4px 0 0; padding: 8px 14px; cursor: pointer; }
+        label { display: block; margin-top: 12px; margin-bottom: 4px; }
+        input, select { padding: 6px; width: 314px; font-size: 14px; }
+        button { margin: 12px 4px 0 0; padding: 8px 14px; cursor: pointer; }
         .status { margin-top: 10px; color: green; display: none; }
     </style>
 </head>
 <body>
     <h3>Manager Config</h3>
 
-    <label>API URL:</label><br />
+    <label>API URL:</label>
     <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+
+    <label>Printer:</label>
+    <select id="printer">
+        <option value="">— No printer —</option>
+    </select>
+
     <br />
     <button onclick="saveConfig()">Save</button>
     <button onclick="loadCurrent()">Reload</button>
     <div class="status" id="status">Saved!</div>
 
     <script type="text/javascript">
+        function fillPrinters(selectedValue) {
+            try {
+                var json = window.external.GetPrinters();
+                var list = eval('(' + json + ')'); // IE-safe parse
+                var sel = document.getElementById('printer');
+                for (var i = 0; i < list.length; i++) {
+                    var opt = document.createElement('option');
+                    opt.value = list[i];
+                    opt.text = list[i];
+                    if (list[i] === selectedValue) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+            } catch (e) { }
+        }
+
         function saveConfig() {
-            var val = document.getElementById('apiUrl').value;
-            window.external.SaveConfig('apiUrl', val);
+            window.external.SaveConfig('apiUrl', document.getElementById('apiUrl').value);
+            window.external.SaveConfig('printer', document.getElementById('printer').value);
             var s = document.getElementById('status');
             s.style.display = 'block';
             setTimeout(function() { s.style.display = 'none'; }, 2000);
         }
 
         function loadCurrent() {
-            var val = window.external.GetConfig('apiUrl');
-            document.getElementById('apiUrl').value = val;
+            document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
+            // fill printers first, passing saved value so it gets pre-selected
+            fillPrinters(window.external.GetConfig('printer'));
         }
 
-        // Load existing value on startup
         loadCurrent();
     </script>
 </body>

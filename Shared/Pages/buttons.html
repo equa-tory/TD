@@ -4,16 +4,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
-        body { font-family: Segoe UI, Arial; margin: 16px; }
+        * { margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, Arial; margin: 16px; }
         .value { font-weight: bold; color: #005a9e; }
     </style>
 </head>
 <body>
-    <h3>Buttons App</h3>
-    <p>API URL from config: <span class="value" id="apiUrl">loading...</span></p>
-    <button onclick="refresh()">Refresh</button>
-    <button onclick="fetchTypes()">Get Ticket Types</button>
-    <div id="buttons"><span class="loading">Loading...</span></div>
+    <!-- <h3>Buttons App</h3> -->
+    <!-- <p>API URL from config: <span class="value" id="apiUrl">loading...</span></p> -->
+    <!-- <button onclick="refresh()">Refresh</button> -->
+    <!-- <button onclick="fetchTypes()">Get Ticket Types</button> -->
+    <!-- <div id="buttons" style="display: grid; height: 100dvh; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); grid-auto-rows: 1f;"><span class="loading">Loading...</span></div> -->
+    <div id="buttons" style="display: flex; flex-wrap: wrap; height: 100vh;"><span class="loading">Loading...</span></div>
 
     <script type="text/javascript">
         function refresh() {
@@ -21,7 +23,7 @@
             document.getElementById('apiUrl').innerText = val || '(not set)';
         }
 
-        refresh();
+        // refresh();
 
         function fetchTypes() {
             // var json = window.external.FetchSomething();
@@ -56,9 +58,16 @@
                     if ('innerText' in btn) btn.innerText = title;
                     else btn.textContent = title;
 
+                    // btn.style.flex = '1';    <div id="buttons" style="display: flex; flex-wrap: wrap; height: 100vh;"><span class="loading">Loading...</span></div>
+
+                    // btn.style.height = '100%';
+                    // btn.style.width = '100%';
+                    btn.style.flex = '1 1 300px';
+                    btn.style.minheight = '100px';
+
                     (function(tid, ttitle){
                         btn.onclick = function() {
-                            var printer = document.getElementById('printer').value;
+                            var printer = window.external.GetConfig('printer');
                             window.external.BookTicket(tid, ttitle, printer);
                         };
                     })(id, title);
@@ -73,9 +82,9 @@
             } catch (e) {
                 container.innerHTML = '<span class="error">' + e.message + '</span>';
             }
-
-
         }
+
+        fetchTypes();
     </script>
 </body>
 </html>

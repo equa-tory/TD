@@ -17,6 +17,20 @@ namespace Tokenizer
         {
             return Config.Get(key);
         }
+
+        public string GetPrinters()
+        {
+            StringBuilder sb = new StringBuilder("[");
+            bool first = true;
+            foreach (string name in PrinterSettings.InstalledPrinters)
+            {
+                if (!first) sb.Append(",");
+                sb.Append("\"" + name.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+                first = false;
+            }
+            sb.Append("]");
+            return sb.ToString();
+        }
     }
 
     public partial class Form1 : Form
