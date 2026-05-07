@@ -1,11 +1,14 @@
 using System;
+using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
-using Tokenizer.Shared;
+using System.Drawing.Printing;
+using TicketApp.Shared;
 
 namespace Tokenizer
 {
-    [ComVisible(true)]
+    // [ComVisible(true)]
+    [System.Runtime.InteropServices.ComVisible(true)]
     public class ScriptManager
     {
         public void SaveConfig(string key, string value)
@@ -20,17 +23,29 @@ namespace Tokenizer
 
         public string GetPrinters()
         {
-            StringBuilder sb = new StringBuilder("[");
-            bool first = true;
-            foreach (string name in PrinterSettings.InstalledPrinters)
+            try
             {
-                if (!first) sb.Append(",");
-                sb.Append("\"" + name.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
-                first = false;
+                StringBuilder sb = new StringBuilder("[");
+                bool first = true;
+                foreach (string name in PrinterSettings.InstalledPrinters)
+                {
+                    if (!first) sb.Append(",");
+                    sb.Append("\"" + name.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+                    first = false;
+                }
+                sb.Append("]");
+                return sb.ToString();
             }
-            sb.Append("]");
-            return sb.ToString();
+            catch (Exception ex)
+            {
+                // return as JSON error so JS can show it
+                return "[\"ERROR: " + ex.Message.Replace("\"", "'") + "\"]";
+            }
         }
+        // public void DebugPrint()
+        // {
+            // GetConfig.Set()
+        // }
     }
 
     public partial class Form1 : Form

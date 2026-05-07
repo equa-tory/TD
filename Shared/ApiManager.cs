@@ -81,6 +81,39 @@ namespace Tokenizer.Shared
         //     return Get("/ticket/" + id + "/");
         // }
 
+        public static void ButtonPress(string typeId, string title, string printerName, bool printDebug)
+        {
+            int id;
+            if (!int.TryParse(typeId, out id))
+                return;
+
+            Dictionary<string, string> p = new Dictionary<string, string>();
+            p.Add("ticket_type_id", id.ToString());
+
+            string response = Post("/ticket/", p);  // POST with empty body, params in query string
+
+            string displayNumber = title;
+            int number = 0;
+
+            try
+            {
+                string numVal  = JsonUtil.GetString(response, "number");
+                string nameVal = JsonUtil.GetString(response, "name");
+                if (!string.IsNullOrEmpty(numVal))  number        = Convert.ToInt32(numVal);
+                if (!string.IsNullOrEmpty(nameVal)) displayNumber = nameVal;
+            }
+            catch { }
+
+            Ticket ticket = new Ticket();
+            ticket.Type          = "";
+            ticket.Number        = number;
+            ticket.DisplayNumber = displayNumber;
+            ticket.Timestamp     = DateTime.Now;
+
+            PrinterManager pm = new PrinterManager(printerName);
+            pm.PrintTicket(ticket, printDebug);
+        }
+
         // ----------------------------------------------------------------
         // Internals
         // ----------------------------------------------------------------

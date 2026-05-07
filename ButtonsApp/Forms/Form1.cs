@@ -8,60 +8,38 @@ namespace Tokenizer
     [ComVisible(true)]
     public class ScriptManager
     {
-        public bool printDebug = true;
         public string GetConfig(string key)
         {
             return Config.Get(key);
         }
 
-
-        public string FetchSomething() // TODO: change
+        public string FetchSomething()
         {
-            return ApiManager.Get("/ticket/types/");
-        }
-
-        public void BookTicket(string typeId, string title, string printerName)
-        {
-            int id;
-            if (!int.TryParse(typeId, out id))
-                return;
-
-            string response = ApiManager.Get("/ticket/?ticket_type_id=" + id);
-
-            string ticketName = title;
-            int ticketNumber = 0;
-
             try
             {
-                Newtonsoft.Json.Linq.JObject obj = Newtonsoft.Json.Linq.JObject.Parse(response);
-                Newtonsoft.Json.Linq.JToken ticket = obj["ticket"];
-
-                if (ticket != null)
-                {
-                    if (ticket["name"] != null)
-                        ticketName = ticket["name"].ToString();
-
-                    if (ticket["number"] != null)
-                        ticketNumber = Convert.ToInt32(ticket["number"].ToString());
-                }
+                return ApiManager.Get("/ticket/types/");
             }
-            catch
+            catch (Exception ex)
             {
-                // если JSON кривой — просто используем дефолт
+                return "{\"error\":\"" + ex.Message.Replace("\"", "'") + "\"}";
             }
+        }
 
-            // print
-            if (string.IsNullOrEmpty(printerName) || printerName == "None")
-                return;
-
-            Ticket ticketObj = new Ticket();
-            ticketObj.type = "";
-            ticketObj.number = ticketNumber;
-            ticketObj.displayNumber = ticketName;
-            ticketObj.timestamp = DateTime.Now;
-
-            PrinterManager pm = new PrinterManager(printerName);
-            pm.PrintTicket(ticketObj, printDebug);
+        // Returns "ok" or an error message so JS can show feedback
+        public string ButtonPress(string typeId, string title)
+        {
+            try
+            {
+                string printer = Config.Get("printer");
+                bool   debug   = Config.Get("printDebug") == "true";
+                ApiManager.ButtonPress(typeId, title, printer, true); // force preview
+                return "ok";
+            }
+            catch (Exception ex)
+            {
+                // show the REAL error in the browser
+                return "error:" + ex.GetType().Name + ": " + ex.Message;
+            }
         }
     }
 

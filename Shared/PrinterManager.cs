@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Drawing.Printing;
 using System.Windows.Forms;
 
-namespace TicketApp.Shared
+namespace Tokenizer.Shared
 {
     public class Ticket
     {
@@ -25,7 +25,7 @@ namespace TicketApp.Shared
         public static Font  NumberFont    = new Font("Arial", 40, FontStyle.Bold);
         public static Font  SmallFont     = new Font("Arial", 10);
 
-        public static string HeaderText   = "Your queue number:";
+        public static string HeaderText   = "Queue number:";
         public static string DateLabel    = "Date and time:";
         public static string DateFormat   = "dd.MM.yyyy HH:mm";
 
@@ -46,34 +46,40 @@ namespace TicketApp.Shared
 
         public void PrintTicket(Ticket ticket, bool preview)
         {
-            if (string.IsNullOrEmpty(_printerName) || _printerName == "None")
-                return;
+            PrintDocument doc = new PrintDocument();
 
-            try
+            // Только для реальной печати
+            if (!preview)
             {
-                PrintDocument doc = new PrintDocument();
-                doc.PrinterSettings.PrinterName = _printerName;
-                doc.PrintPage += delegate(object sender, PrintPageEventArgs e)
-                {
-                    DrawTicket(e.Graphics, ticket);
-                };
+                if (string.IsNullOrEmpty(_printerName) || _printerName == "None")
+                    return;
 
-                if (preview)
+                doc.PrinterSettings.PrinterName = _printerName;
+            }
+
+            doc.PrintPage += delegate(object sender, PrintPageEventArgs e)
+            {
+                DrawTicket(e.Graphics, ticket);
+            };
+
+            if (preview)
+            {
+                Form owner = Form.ActiveForm ?? Application.OpenForms[0];
+
+                owner.Invoke((MethodInvoker)delegate
                 {
                     PrintPreviewDialog dlg = new PrintPreviewDialog();
                     dlg.Document = doc;
-                    dlg.Width  = 800;
+                    dlg.Width = 800;
                     dlg.Height = 600;
-                    dlg.ShowDialog();
-                }
-                else
-                {
-                    doc.Print();
-                }
+                    dlg.ShowDialog(owner);
+                });
             }
-            catch { }
+            else
+            {
+                doc.Print();
+            }
         }
-
         private static void DrawTicket(Graphics g, Ticket ticket)
         {
             float x = TicketLayout.MarginLeft;

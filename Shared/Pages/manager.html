@@ -25,22 +25,60 @@
     <br />
     <button onclick="saveConfig()">Save</button>
     <button onclick="loadCurrent()">Reload</button>
+    <button onclick="debugPrint()" id="debugPrintButton">DebugPrint (false)</button>
     <div class="status" id="status">Saved!</div>
+
+    <button onclick="debugPrinters()">Debug: Show Printers JSON</button>
+    <div id="printerDebug" style="color:red;margin-top:8px;word-break:break-all;"></div>
+
+    <script type="text/javascript">
+        function debugPrinters() {
+            var out = document.getElementById('printerDebug');
+            try {
+                var json = window.external.GetPrinters();
+                out.style.color = 'green';
+                out.innerText = 'Raw: ' + json;
+            } catch(e) {
+                out.style.color = 'red';
+                out.innerText = 'Exception: ' + e.message;
+            }
+        }
+    </script>
 
     <script type="text/javascript">
         function fillPrinters(selectedValue) {
+            var dbg = document.getElementById('printerDebug');
             try {
                 var json = window.external.GetPrinters();
-                var list = eval('(' + json + ')'); // IE-safe parse
+                var list = eval('(' + json + ')');
                 var sel = document.getElementById('printer');
+                if (list.length === 0) {
+                    if(dbg) dbg.innerText = 'No printers found (list empty)';
+                    return;
+                }
                 for (var i = 0; i < list.length; i++) {
                     var opt = document.createElement('option');
                     opt.value = list[i];
-                    opt.text = list[i];
+                    opt.text  = list[i];
                     if (list[i] === selectedValue) opt.selected = true;
                     sel.appendChild(opt);
                 }
-            } catch (e) { }
+            } catch (e) {
+                if(dbg) dbg.innerText = 'fillPrinters error: ' + e.message;
+            }
+        }
+        
+        function debugPrint()
+        {
+            var status = window.external.GetConfig('printDebug');
+            if (status === 'true') {
+                window.external.SaveConfig('printDebug', 'false');
+                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: true)';
+            }
+            else {
+                window.external.SaveConfig('printDebug', 'true');
+                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: false)';
+            }
         }
 
         function saveConfig() {
@@ -57,6 +95,9 @@
             fillPrinters(window.external.GetConfig('printer'));
         }
 
+        // window.external.SaveConfig('printDebug', 'true');
+        var printDebug = window.external.GetConfig('printDebug');
+        document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: ' + printDebug + ')';
         loadCurrent();
     </script>
 </body>
