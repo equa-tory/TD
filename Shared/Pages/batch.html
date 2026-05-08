@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        body { font-family: Segoe UI, Arial; margin: 16px; }
+        label { display: block; margin-top: 12px; margin-bottom: 4px; }
+        input, select { padding: 6px; width: 314px; font-size: 14px; }
+        button { margin: 12px 4px 0 0; padding: 8px 14px; cursor: pointer; }
+        .status { margin-top: 10px; }
+        .error  { color: #c00; }
+        .ok     { color: green; }
+    </style>
+</head>
+<body>
+    <h3>Batch Tickets</h3>
+
+    <label>Ticket Type:</label>
+    <select id="ticketType">
+        <option value="">— loading... —</option>
+    </select>
+
+    <label>Count:</label>
+    <input type="number" id="count" value="1" min="1" max="100" style="width:100px;" />
+
+    <br />
+    <button onclick="runBatch()">Print Batch</button>
+    <div class="status" id="status"></div>
+
+    <script type="text/javascript">
+        function loadTypes() {
+            var sel = document.getElementById('ticketType');
+            try {
+                var json = window.external.GetConfig('_types_cache'); // optional
+                // just call the API directly
+                var raw  = window.external.FetchTypes();
+                var list = eval('(' + raw + ')');
+                if (!(list instanceof Array)) {
+                    if (list.results) list = list.results;
+                    else if (list.types) list = list.types;
+                    else list = [list];
+                }
+                sel.innerHTML = '';
+                for (var i = 0; i < list.length; i++) {
+                    var item = list[i];
+                    var id   = String(item.id || item.slug || i);
+                    var name = item.title || item.name || item.display_name || id;
+                    var opt  = document.createElement('option');
+                    opt.value = id;
+                    opt.text  = name;
+                    sel.appendChild(opt);
+                }
+            } catch(e) {
+                sel.innerHTML = '<option>Error: ' + e.message + '</option>';
+            }
+        }
+
+        function runBatch() {
+            var typeId = document.getElementById('ticketType').value;
+            var count  = parseInt(document.getElementById('count').value, 10);
+            var status = document.getElementById('status');
+
+            if (!typeId || isNaN(count) || count < 1) {
+                status.className = 'status error';
+                status.innerText = 'Select a type and enter a valid count.';
+                return;
+            }
+
+            status.className = 'status';
+            status.innerText = 'Printing ' + count + ' ticket(s)...';
+
+            var ok = 0, fail = 0;
+            for (var i = 0; i < count; i++) {
+                try {
+                    var result = window.external.BatchPress(typeId);
+                    if (result && result.indexOf('error:') === 0) fail++;
+                    else ok++;
+                } catch(e) {
+                    fail++;
+                }
+            }
+
+            status.className = 'status ' + (fail > 0 ? 'error' : 'ok');
+            status.innerText = 'Done: ' + ok + ' printed' + (fail > 0 ? ', ' + fail + ' failed' : '') + '.';
+        }
+
+        loadTypes();
+    </script>
+</body>
+</html>

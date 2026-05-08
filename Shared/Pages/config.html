@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <style>
+        body { font-family: Segoe UI, Arial; margin: 16px; }
+        label { display: block; margin-top: 12px; margin-bottom: 4px; }
+        input, select { padding: 6px; width: 314px; font-size: 14px; }
+        button { margin: 12px 4px 0 0; padding: 8px 14px; cursor: pointer; }
+        .status { margin-top: 10px; color: green; display: none; }
+    </style>
+</head>
+<body>
+    <!-- -------------------------HTML------------------------- -->
+    <h3>Config</h3>
+
+    <label>API URL:</label>
+    <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+
+    <label>Printer:</label>
+    <select id="printer">
+        <option value="">— No printer —</option>
+    </select>
+
+    <br />
+    <button onclick="saveConfig()">Save</button>
+    <button onclick="loadCurrent()">Reload</button>
+    <button onclick="debugPrint()" id="debugPrintButton">DebugPrint (false)</button>
+    <div class="status" id="status">Saved!</div>
+
+    <button onclick="debugPrinters()">Debug: Show Printers JSON</button>
+    <div id="printerDebug" style="color:red;margin-top:8px;word-break:break-all;"></div>
+    <!-- -------------------------HTML------------------------- -->
+
+    <script type="text/javascript">
+        function debugPrinters() {
+            var out = document.getElementById('printerDebug');
+            try {
+                var json = window.external.GetPrinters();
+                out.style.color = 'green';
+                out.innerText = 'Raw: ' + json;
+            } catch(e) {
+                out.style.color = 'red';
+                out.innerText = 'Exception: ' + e.message;
+            }
+        }
+    </script>
+
+    <script type="text/javascript">
+        function fillPrinters(selectedValue) {
+            var dbg = document.getElementById('printerDebug');
+            try {
+                var json = window.external.GetPrinters();
+                var list = eval('(' + json + ')');
+                var sel = document.getElementById('printer');
+                if (list.length === 0) {
+                    if(dbg) dbg.innerText = 'No printers found (list empty)';
+                    return;
+                }
+                for (var i = 0; i < list.length; i++) {
+                    var opt = document.createElement('option');
+                    opt.value = list[i];
+                    opt.text  = list[i];
+                    if (list[i] === selectedValue) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+            } catch (e) {
+                if(dbg) dbg.innerText = 'fillPrinters error: ' + e.message;
+            }
+        }
+        
+        function debugPrint()
+        {
+            var status = window.external.GetConfig('printDebug');
+            if (status === 'true') {
+                window.external.SaveConfig('printDebug', 'false');
+                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: true)';
+            }
+            else {
+                window.external.SaveConfig('printDebug', 'true');
+                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: false)';
+            }
+        }
+
+        function saveConfig() {
+            window.external.SaveConfig('apiUrl', document.getElementById('apiUrl').value);
+            window.external.SaveConfig('printer', document.getElementById('printer').value);
+            var s = document.getElementById('status');
+            s.style.display = 'block';
+            setTimeout(function() { s.style.display = 'none'; }, 2000);
+        }
+
+        function loadCurrent() {
+            document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
+            // fill printers first, passing saved value so it gets pre-selected
+            fillPrinters(window.external.GetConfig('printer'));
+        }
+
+        var printDebug = window.external.GetConfig('printDebug');
+        document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: ' + printDebug + ')';
+        loadCurrent();
+    </script>
+</body>
+</html>

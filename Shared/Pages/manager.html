@@ -4,101 +4,429 @@
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
-        body { font-family: Segoe UI, Arial; margin: 16px; }
-        label { display: block; margin-top: 12px; margin-bottom: 4px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
+
+        #menubar { background: #2c2c2c; flex-shrink: 0; }
+        #menubar button { background: none; border: none; color: #fff; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+        #menubar button:hover { background: #444; }
+        #menubar button.active { background: #555; }
+
+        .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .page.active { display: flex; }
+
+        /* ── Action bar ── */
+        #actionbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            border-bottom: 1px solid #ddd;
+            padding: 8px 12px;
+            flex-shrink: 0;
+        }
+        #btn-next {
+            background: #0078d4;
+            color: #fff;
+            border: none;
+            padding: 10px 28px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #btn-next:hover { background: #005fa3; }
+        #btn-next:active { background: #004c85; }
+
+        .action-group { display: flex; gap: 6px; }
+        .action-group button {
+            border: 1px solid #bbb;
+            background: #f5f5f5;
+            padding: 8px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .action-group button:hover { background: #e5e5e5; }
+        .action-group button.btn-served  { border-color: #107c10; color: #107c10; }
+        .action-group button.btn-notserved { border-color: #d83b01; color: #d83b01; }
+        .action-group button.btn-missed  { border-color: #8764b8; color: #8764b8; }
+        .action-group button.btn-gong    { border-color: #c19c00; color: #986f00; }
+        .action-group button:disabled { opacity: 0.4; cursor: default; }
+
+        /* ── Tabs ── */
+        #tabs-bar {
+            display: flex;
+            background: #fff;
+            border-bottom: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            padding: 8px 20px;
+            border: none;
+            background: none;
+            font-size: 13px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: #555;
+        }
+        .tab-btn.active { border-bottom-color: #0078d4; color: #0078d4; font-weight: bold; }
+
+        /* ── List ── */
+        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        .tab-list { display: none; flex: 1; overflow-y: auto; }
+        .tab-list.active { display: block; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead { position: sticky; top: 0; background: #e8e8e8; }
+        th { text-align: left; padding: 7px 12px; font-weight: 600; color: #333; border-bottom: 1px solid #ccc; }
+        td { padding: 6px 12px; border-bottom: 1px solid #eee; }
+        tr.selected td { background: #cce4f7; }
+        tr:hover td { background: #f0f0f0; }
+        tr.selected:hover td { background: #b8d9f2; }
+
+        .result-served    { color: #107c10; }
+        .result-notserved { color: #d83b01; }
+        .result-missed    { color: #8764b8; }
+        .result-pending   { color: #888; }
+
+        #hint { padding: 6px 12px; font-size: 11px; color: #888; background: #fafafa; border-top: 1px solid #eee; flex-shrink: 0; }
+
+        /* ── Config / Batch pages ── */
+        .form-page { padding: 16px; overflow-y: auto; flex: 1; }
+        label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 13px; }
         input, select { padding: 6px; width: 314px; font-size: 14px; }
-        button { margin: 12px 4px 0 0; padding: 8px 14px; cursor: pointer; }
-        .status { margin-top: 10px; color: green; display: none; }
+        .btn { margin: 12px 4px 0 0; padding: 8px 14px; cursor: pointer; font-size: 13px; }
+        .status { margin-top: 10px; color: green; display: none; font-size: 13px; }
     </style>
 </head>
 <body>
-    <h3>Manager Config</h3>
 
-    <label>API URL:</label>
-    <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+<div id="menubar">
+    <button onclick="showPage('manager')" class="active" id="nav-manager">Manager</button>
+    <button onclick="showPage('config')" id="nav-config">Config</button>
+    <button onclick="showPage('batch')"  id="nav-batch">Batch Tickets</button>
+</div>
 
-    <label>Printer:</label>
-    <select id="printer">
-        <option value="">— No printer —</option>
-    </select>
+<!-- ══ Manager page ══════════════════════════════════════════════════════ -->
+<div id="page-manager" class="page active">
 
-    <br />
-    <button onclick="saveConfig()">Save</button>
-    <button onclick="loadCurrent()">Reload</button>
-    <button onclick="debugPrint()" id="debugPrintButton">DebugPrint (false)</button>
-    <div class="status" id="status">Saved!</div>
+    <div id="actionbar">
+        <button id="btn-next" onclick="callNext()">&#9654; Next</button>
+        <div class="action-group">
+            <button class="btn-served"    onclick="markSelected('served')"    id="ab-served">&#10003; Served</button>
+            <button class="btn-notserved" onclick="markSelected('notserved')" id="ab-notserved">&#10007; Not served</button>
+            <button class="btn-missed"    onclick="markSelected('missed')"    id="ab-missed">&#9888; Missed</button>
+            <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Gong</button>
+        </div>
+    </div>
 
-    <button onclick="debugPrinters()">Debug: Show Printers JSON</button>
-    <div id="printerDebug" style="color:red;margin-top:8px;word-break:break-all;"></div>
+    <div id="tabs-bar">
+        <button class="tab-btn active" onclick="showTab('queue')"   id="tab-queue">Queue</button>
+        <button class="tab-btn"        onclick="showTab('history')" id="tab-history">History</button>
+    </div>
 
-    <script type="text/javascript">
-        function debugPrinters() {
-            var out = document.getElementById('printerDebug');
+    <div id="list-area">
+        <div class="tab-list active" id="list-queue">
+            <table>
+                <thead><tr><th>#</th><th>Number</th><th>Called at</th><th>Status</th></tr></thead>
+                <tbody id="tbody-queue"></tbody>
+            </table>
+        </div>
+        <div class="tab-list" id="list-history">
+            <table>
+                <thead><tr><th>#</th><th>Number</th><th>Called at</th><th>Result</th></tr></thead>
+                <tbody id="tbody-history"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="hint">Click to select &bull; Shift+click to multi-select &bull; Delete to remove selected</div>
+</div>
+
+<!-- ══ Config page ═══════════════════════════════════════════════════════ -->
+<div id="page-config" class="page">
+    <div class="form-page">
+        <h3 style="margin-bottom:8px;">Config</h3>
+        <label>API URL:</label>
+        <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+        <label>Printer:</label>
+        <select id="printer"><option value="">— No printer —</option></select>
+        <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
+        <br />
+        <button class="btn" onclick="saveConfig()">Save</button>
+        <button class="btn" onclick="loadCurrent()">Reload</button>
+        <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
+        <div class="status" id="status">Saved!</div>
+    </div>
+</div>
+
+<!-- ══ Batch page ════════════════════════════════════════════════════════ -->
+<div id="page-batch" class="page">
+    <div class="form-page">
+        <h3 style="margin-bottom:8px;">Batch Tickets</h3>
+        <label>Ticket Type:</label>
+        <select id="ticketType"><option value="">— loading... —</option></select>
+        <label>Count:</label>
+        <input type="number" id="count" value="1" min="1" max="100" style="width:100px;" />
+        <br />
+        <button class="btn" onclick="createBatch()">Create Tickets</button>
+        <div id="batchStatus" class="status"></div>
+    </div>
+    <button onclick="testCom()">Test COM</button>
+</div>
+
+<script type="text/javascript">
+
+    // ── State ──────────────────────────────────────────────────────────────
+    var queue   = [];   // { id, number, calledAt, status }
+    var history = [];
+    var lastSelected = null;   // index for shift-click range
+
+    // ── Navigation ─────────────────────────────────────────────────────────
+    function showPage(name) {
+        var ids = ['manager','config','batch'];
+        for (var i = 0; i < ids.length; i++) {
+            document.getElementById('page-' + ids[i]).className = 'page';
+            document.getElementById('nav-'  + ids[i]).className = '';
+        }
+        document.getElementById('page-' + name).className = 'page active';
+        document.getElementById('nav-'  + name).className = 'active';
+        if (name === 'batch') loadTypes();
+        if (name === 'config') loadCurrent();
+    }
+
+    function showTab(name) {
+        document.getElementById('list-queue').className   = 'tab-list' + (name==='queue'   ? ' active' : '');
+        document.getElementById('list-history').className = 'tab-list' + (name==='history' ? ' active' : '');
+        document.getElementById('tab-queue').className    = 'tab-btn'  + (name==='queue'   ? ' active' : '');
+        document.getElementById('tab-history').className  = 'tab-btn'  + (name==='history' ? ' active' : '');
+        lastSelected = null;
+    }
+
+    // ── Queue rendering ────────────────────────────────────────────────────
+    function renderQueue() {
+        var tb = document.getElementById('tbody-queue');
+        tb.innerHTML = '';
+        for (var i = 0; i < queue.length; i++) {
+            var r = queue[i];
+            var tr = document.createElement('tr');
+            if (r.selected) tr.className = 'selected';
+            tr.setAttribute('data-idx', i);
+            tr.setAttribute('data-list', 'queue');
+            tr.onclick = function(e) { rowClick(e, this); };
+            tr.innerHTML =
+                '<td>' + (i+1) + '</td>' +
+                '<td><b>' + escHtml(r.number) + '</b></td>' +
+                '<td>' + escHtml(r.calledAt) + '</td>' +
+                '<td class="result-pending">' + escHtml(r.status) + '</td>';
+            tb.appendChild(tr);
+        }
+    }
+
+    function renderHistory() {
+        var tb = document.getElementById('tbody-history');
+        tb.innerHTML = '';
+        for (var i = 0; i < history.length; i++) {
+            var r = history[i];
+            var cls = r.result === 'served'    ? 'result-served'
+                    : r.result === 'notserved' ? 'result-notserved'
+                    : r.result === 'missed'    ? 'result-missed'   : '';
+            var tr = document.createElement('tr');
+            if (r.selected) tr.className = 'selected';
+            tr.setAttribute('data-idx', i);
+            tr.setAttribute('data-list', 'history');
+            tr.onclick = function(e) { rowClick(e, this); };
+            tr.innerHTML =
+                '<td>' + (i+1) + '</td>' +
+                '<td><b>' + escHtml(r.number) + '</b></td>' +
+                '<td>' + escHtml(r.calledAt) + '</td>' +
+                '<td class="' + cls + '">' + escHtml(r.result) + '</td>';
+            tb.appendChild(tr);
+        }
+    }
+
+    // ── Row selection (click + shift+click) ────────────────────────────────
+    function rowClick(e, tr) {
+        var listName = tr.getAttribute('data-list');
+        var idx      = parseInt(tr.getAttribute('data-idx'), 10);
+        var data     = listName === 'queue' ? queue : history;
+
+        if (e.shiftKey && lastSelected !== null && lastSelected.list === listName) {
+            var from = Math.min(lastSelected.idx, idx);
+            var to   = Math.max(lastSelected.idx, idx);
+            for (var i = from; i <= to; i++) data[i].selected = true;
+        } else {
+            // deselect all
+            for (var j = 0; j < data.length; j++) data[j].selected = false;
+            data[idx].selected = true;
+            lastSelected = { list: listName, idx: idx };
+        }
+
+        if (listName === 'queue') renderQueue(); else renderHistory();
+    }
+
+    // ── Delete key ─────────────────────────────────────────────────────────
+    document.onkeydown = function(e) {
+        if ((e.keyCode || e.which) !== 46) return; // Delete key
+        var isQueue   = document.getElementById('list-queue').className.indexOf('active') >= 0;
+        var data      = isQueue ? queue : history;
+        var remaining = [];
+        for (var i = 0; i < data.length; i++) {
+            if (!data[i].selected) remaining.push(data[i]);
+        }
+        if (isQueue) { queue = remaining; renderQueue(); }
+        else         { history = remaining; renderHistory(); }
+        lastSelected = null;
+    };
+
+    // ── Actions ────────────────────────────────────────────────────────────
+    function callNext() {
+        var result, number, calledAt;
+        try {
+            result = window.external.ButtonPress('1', 'Next');
+            // parse number from result if possible
+            number  = 'T-' + (queue.length + history.length + 1);
+            calledAt = now();
+        } catch(e) {
+            number  = 'ERR';
+            calledAt = now();
+        }
+        queue.push({ number: number, calledAt: calledAt, status: 'waiting', selected: false });
+        renderQueue();
+    }
+
+    function markSelected(result) {
+        var moved = [];
+        var remaining = [];
+        for (var i = 0; i < queue.length; i++) {
+            if (queue[i].selected) {
+                moved.push({ number: queue[i].number, calledAt: queue[i].calledAt, result: result, selected: false });
+            } else {
+                remaining.push(queue[i]);
+            }
+        }
+        queue = remaining;
+        for (var j = 0; j < moved.length; j++) history.unshift(moved[j]);
+        lastSelected = null;
+        renderQueue();
+        renderHistory();
+    }
+
+    function gong() {
+        try { window.external.Gong(); } catch(e) {}
+        // flash the button
+        var btn = document.getElementById('ab-gong');
+        btn.style.background = '#fef3cd';
+        setTimeout(function() { btn.style.background = ''; }, 400);
+    }
+
+    // ── Config ─────────────────────────────────────────────────────────────
+    function fillPrinters(selectedValue) {
+        var dbg = document.getElementById('printerDebug');
+        try {
+            var json = window.external.GetPrinters();
+            var list = eval('(' + json + ')');
+            var sel  = document.getElementById('printer');
+            sel.innerHTML = '<option value="">— No printer —</option>';
+            for (var i = 0; i < list.length; i++) {
+                var opt = document.createElement('option');
+                opt.value = list[i]; opt.text = list[i];
+                if (list[i] === selectedValue) opt.selected = true;
+                sel.appendChild(opt);
+            }
+            dbg.innerText = '';
+        } catch(e) {
+            dbg.innerText = 'Printers error: ' + e.message;
+        }
+    }
+
+    function saveConfig() {
+        window.external.SaveConfig('apiUrl',  document.getElementById('apiUrl').value);
+        window.external.SaveConfig('printer', document.getElementById('printer').value);
+        var s = document.getElementById('status');
+        s.style.display = 'block';
+        setTimeout(function() { s.style.display = 'none'; }, 2000);
+    }
+
+    function loadCurrent() {
+        document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
+        fillPrinters(window.external.GetConfig('printer'));
+        var dbgVal = window.external.GetConfig('printDebug');
+        document.getElementById('debugBtn').innerText = 'Debug Print: ' + (dbgVal || 'false');
+    }
+
+    function toggleDebug() {
+        var cur  = window.external.GetConfig('printDebug');
+        var next = (cur === 'true') ? 'false' : 'true';
+        window.external.SaveConfig('printDebug', next);
+        document.getElementById('debugBtn').innerText = 'Debug Print: ' + next;
+    }
+
+    // ── Batch ──────────────────────────────────────────────────────────────
+    function testCom() {
+        var out = '';
+        try { out += 'GetConfig: ' + window.external.GetConfig('apiUrl') + '\n'; } catch(e) { out += 'GetConfig FAIL: ' + e.message + '\n'; }
+        try { out += 'FetchTypes: ' + window.external.FetchTypes().substring(0, 30); } catch(e) { out += 'FetchTypes FAIL: ' + e.message; }
+        alert(out);
+    }
+
+    function loadTypes() {
+        var sel = document.getElementById('ticketType');
+        try {
+            var raw  = window.external.FetchTypes();
+            var list = eval('(' + raw + ')');
+            if (!(list instanceof Array)) {
+                list = list.results || list.types || [list];
+            }
+            sel.innerHTML = '';
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                var opt  = document.createElement('option');
+                opt.value = String(item.id || item.slug || i);
+                opt.text  = item.title || item.name || item.display_name || opt.value;
+                sel.appendChild(opt);
+            }
+        } catch(e) {
+            sel.innerHTML = '<option>Error: ' + e.message + '</option>';
+        }
+    }
+
+    function createBatch() {
+        var typeId = document.getElementById('ticketType').value;
+        var count  = parseInt(document.getElementById('count').value, 10);
+        var status = document.getElementById('batchStatus');
+        if (!typeId || isNaN(count) || count < 1) {
+            status.style.display = 'block'; status.style.color = 'red';
+            status.innerText = 'Select a type and valid count.'; return;
+        }
+        status.style.display = 'block'; status.style.color = '#333';
+        status.innerText = 'Creating ' + count + ' ticket(s)...';
+        var ok = 0, fail = 0;
+        for (var i = 0; i < count; i++) {
             try {
-                var json = window.external.GetPrinters();
-                out.style.color = 'green';
-                out.innerText = 'Raw: ' + json;
-            } catch(e) {
-                out.style.color = 'red';
-                out.innerText = 'Exception: ' + e.message;
-            }
+                var r = window.external.BatchPress(typeId);
+                if (r && r.indexOf('error:') === 0) fail++; else ok++;
+            } catch(e) { fail++; }
         }
-    </script>
+        status.style.color = fail > 0 ? 'red' : 'green';
+        status.innerText = 'Done: ' + ok + ' created' + (fail > 0 ? ', ' + fail + ' failed.' : '.');
+    }
 
-    <script type="text/javascript">
-        function fillPrinters(selectedValue) {
-            var dbg = document.getElementById('printerDebug');
-            try {
-                var json = window.external.GetPrinters();
-                var list = eval('(' + json + ')');
-                var sel = document.getElementById('printer');
-                if (list.length === 0) {
-                    if(dbg) dbg.innerText = 'No printers found (list empty)';
-                    return;
-                }
-                for (var i = 0; i < list.length; i++) {
-                    var opt = document.createElement('option');
-                    opt.value = list[i];
-                    opt.text  = list[i];
-                    if (list[i] === selectedValue) opt.selected = true;
-                    sel.appendChild(opt);
-                }
-            } catch (e) {
-                if(dbg) dbg.innerText = 'fillPrinters error: ' + e.message;
-            }
-        }
-        
-        function debugPrint()
-        {
-            var status = window.external.GetConfig('printDebug');
-            if (status === 'true') {
-                window.external.SaveConfig('printDebug', 'false');
-                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: true)';
-            }
-            else {
-                window.external.SaveConfig('printDebug', 'true');
-                document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: false)';
-            }
-        }
+    // ── Helpers ────────────────────────────────────────────────────────────
+    function now() {
+        var d = new Date();
+        return d.getHours() + ':' +
+               (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
+               (d.getSeconds() < 10 ? '0' : '') + d.getSeconds();
+    }
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
 
-        function saveConfig() {
-            window.external.SaveConfig('apiUrl', document.getElementById('apiUrl').value);
-            window.external.SaveConfig('printer', document.getElementById('printer').value);
-            var s = document.getElementById('status');
-            s.style.display = 'block';
-            setTimeout(function() { s.style.display = 'none'; }, 2000);
-        }
-
-        function loadCurrent() {
-            document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
-            // fill printers first, passing saved value so it gets pre-selected
-            fillPrinters(window.external.GetConfig('printer'));
-        }
-
-        // window.external.SaveConfig('printDebug', 'true');
-        var printDebug = window.external.GetConfig('printDebug');
-        document.getElementById('debugPrintButton').innerText = 'DebugPrint (now: ' + printDebug + ')';
-        loadCurrent();
-    </script>
+    // ── Init ───────────────────────────────────────────────────────────────
+    renderQueue();
+    renderHistory();
+</script>
 </body>
 </html>
