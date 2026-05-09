@@ -15,6 +15,15 @@
         .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
         .page.active { display: flex; }
 
+        #currentTicket {
+            display: none;
+            background: #e8f4fd;
+            border-bottom: 1px solid #b3d7f0;
+            padding: 8px 14px;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
         /* ── Action bar ── */
         #actionbar {
             display: flex;
@@ -118,9 +127,9 @@
     <div id="actionbar">
         <button id="btn-next" onclick="callNext()">&#9654; Next</button>
         <div class="action-group">
-            <button class="btn-served"    onclick="markSelected('served')"    id="ab-served">&#10003; Served</button>
-            <button class="btn-notserved" onclick="markSelected('notserved')" id="ab-notserved">&#10007; Not served</button>
-            <button class="btn-missed"    onclick="markSelected('missed')"    id="ab-missed">&#9888; Missed</button>
+            <button class="btn-served"    onclick="setServingStatus('served')"    id="ab-served">&#10003; Served</button>
+            <button class="btn-notserved" onclick="setServingStatus('not_served')" id="ab-notserved">&#10007; Not served</button>
+            <button class="btn-missed"    onclick="setServingStatus('not_come')"  id="ab-missed">&#9888; Missed</button>
             <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Gong</button>
         </div>
     </div>
@@ -145,7 +154,7 @@
         </div>
     </div>
 
-    <div id="hint">Click to select &bull; Shift+click to multi-select &bull; Delete to remove selected</div>
+    <!-- <div id="hint">Click to select &bull; Shift+click to multi-select &bull; Delete to remove selected</div> -->
 </div>
 
 <!-- ══ Config page ═══════════════════════════════════════════════════════ -->
@@ -159,10 +168,10 @@
         <label>Printer:</label>
         <select id="printer"><option value="">— No printer —</option></select>
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
+        <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
         <br />
         <button class="btn" onclick="saveConfig()">Save</button>
         <button class="btn" onclick="loadCurrent()">Reload</button>
-        <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
         <div class="status" id="status">Saved!</div>
     </div>
 </div>
@@ -189,7 +198,78 @@
     var lastSelected = null;   // index for shift-click range
     var refreshTimer = null;
     var REFRESH_MS   = 3000; // poll every 3 seconds
+    var servingTicket = null; // { id, number, calledAt }
+    
+    function loadTickets() {
+        try {
+            var raw  = window.external.GetTickets();
+            var data = eval('(' + raw + ')');
+            var list = data;
+            if (!(list instanceof Array)) {
+                list = data.tickets || data.results || data.items || [data];
+            }
 
+            var newQueue   = [];
+            var newHistory = [];
+            var newServing = null;
+
+            for (var i = 0; i < list.length; i++) {
+                var t      = list[i];
+                var status = (t.status || '').toLowerCase();
+                var entry  = {
+                    id:       String(t.id || i),
+                    number:   t.name || t.number || t.display_number || ('T-' + i),
+                    calledAt: t.created_at ? formatDate(t.created_at) : '',
+                    status:   status,
+                    selected: false
+                };
+
+                if (status === 'serving') {
+                    newServing = entry;
+                } else if (status === 'active') {
+                    entry.selected = isSelected('queue', entry.id);
+                    newQueue.push(entry);
+                } else {
+                    entry.selected = isSelected('history', entry.id);
+                    newHistory.push(entry);
+                }
+            }
+
+            servingTicket = newServing;
+            queue         = newQueue;
+            history       = newHistory;
+
+            renderServing();
+            renderQueue();
+            renderHistory();
+            updateButtons();
+
+        } catch(e) { }
+    }
+
+    function renderServing() {
+        var el = document.getElementById('currentTicket');
+        if (!servingTicket) {
+            el.innerHTML = '';
+            el.style.display = 'none';
+            return;
+        }
+        el.style.display = 'block';
+        el.innerHTML =
+            '<span style="font-weight:bold;font-size:15px;">' + escHtml(servingTicket.number) + '</span>' +
+            '<span style="color:#888;font-size:12px;margin-left:10px;">serving since ' + escHtml(servingTicket.calledAt) + '</span>';
+    }
+
+    function updateButtons() {
+        var hasServing = servingTicket !== null;
+        var hasQueue   = queue.length > 0;
+
+        document.getElementById('btn-next').disabled      = !hasQueue && !hasServing;
+        document.getElementById('ab-served').disabled     = !hasServing;
+        document.getElementById('ab-notserved').disabled  = !hasServing;
+        document.getElementById('ab-missed').disabled     = !hasServing;
+    }
+    
     // ── Navigation ─────────────────────────────────────────────────────────
     // update showPage to pause/resume:
     function showPage(name) {
@@ -217,49 +297,49 @@
     }
 
     // ── Fetch & split tickets from API ────────────────────────────────────
-    function loadTickets() {
-        try {
-            var raw  = window.external.GetTickets();
-            var data = eval('(' + raw + ')');
+    // function loadTickets() {
+    //     try {
+    //         var raw  = window.external.GetTickets();
+    //         var data = eval('(' + raw + ')');
 
-            // unwrap envelope if needed
-            var list = data;
-            if (!(list instanceof Array)) {
-                list = data.tickets || data.results || data.items || [data];
-            }
+    //         // unwrap envelope if needed
+    //         var list = data;
+    //         if (!(list instanceof Array)) {
+    //             list = data.tickets || data.results || data.items || [data];
+    //         }
 
-            var newQueue   = [];
-            var newHistory = [];
+    //         var newQueue   = [];
+    //         var newHistory = [];
 
-            for (var i = 0; i < list.length; i++) {
-                var t = list[i];
-                var status = (t.status || '').toLowerCase();
-                var entry = {
-                    id:       String(t.id   || i),
-                    number:   t.name  || t.number || t.display_number || ('T-' + i),
-                    calledAt: t.created_at ? formatDate(t.created_at) : '',
-                    status:   status,
-                    selected: false
-                };
-                if (status === 'active') {
-                    // preserve selection across refreshes
-                    entry.selected = isSelected('queue', entry.id);
-                    newQueue.push(entry);
-                } else {
-                    entry.selected = isSelected('history', entry.id);
-                    newHistory.push(entry);
-                }
-            }
+    //         for (var i = 0; i < list.length; i++) {
+    //             var t = list[i];
+    //             var status = (t.status || '').toLowerCase();
+    //             var entry = {
+    //                 id:       String(t.id   || i),
+    //                 number:   t.name  || t.number || t.display_number || ('T-' + i),
+    //                 calledAt: t.created_at ? formatDate(t.created_at) : '',
+    //                 status:   status,
+    //                 selected: false
+    //             };
+    //             if (status === 'active') {
+    //                 // preserve selection across refreshes
+    //                 entry.selected = isSelected('queue', entry.id);
+    //                 newQueue.push(entry);
+    //             } else {
+    //                 entry.selected = isSelected('history', entry.id);
+    //                 newHistory.push(entry);
+    //             }
+    //         }
 
-            queue   = newQueue;
-            history = newHistory;
-            renderQueue();
-            renderHistory();
+    //         queue   = newQueue;
+    //         history = newHistory;
+    //         renderQueue();
+    //         renderHistory();
 
-        } catch(e) {
-            // don't wipe the lists on a failed refresh
-        }
-    }
+    //     } catch(e) {
+    //         // don't wipe the lists on a failed refresh
+    //     }
+    // }
 
     function isSelected(listName, id) {
         var data = listName === 'queue' ? queue : history;
@@ -271,8 +351,11 @@
 
     // ── Realtime polling ──────────────────────────────────────────────────
     function startRefresh() {
+        stopRefresh(); // prevent double timers if called multiple times
         loadTickets();
-        refreshTimer = setInterval(loadTickets, window.external.GetConfig('pollInterval') || REFRESH_MS);
+        var rate = parseInt(window.external.GetConfig('refreshRate'), 10);
+        if (isNaN(rate) || rate < 500) rate = REFRESH_MS;
+        refreshTimer = setInterval(loadTickets, rate);
     }
 
     function stopRefresh() {
@@ -419,6 +502,26 @@
         try { window.external.Gong(); } catch(e) {}
     }
 
+    function ctxPrint() {
+        hideCtxMenu();
+        var data = ctxTargetList === 'queue' ? queue : history;
+
+        // get last selected ticket
+        var ticket = null;
+        for (var i = data.length - 1; i >= 0; i--) {
+            if (data[i].selected) { ticket = data[i]; break; }
+        }
+
+        if (!ticket) { alert('No ticket selected.'); return; }
+
+        try {
+            var result = window.external.PrintTicket(ticket.id, ticket.number);
+            if (result && result.indexOf('error') >= 0) alert('Print error: ' + result);
+        } catch(e) {
+            alert('PrintTicket failed: ' + e.message);
+        }
+    }
+
     function deleteSelected(listName) {
         var ids = getSelectedIds(listName);
         if (ids.length === 0) return;
@@ -470,18 +573,35 @@
 
     // ── Actions ────────────────────────────────────────────────────────────
     function callNext() {
-        var result, number, calledAt;
         try {
-            result = window.external.ButtonPress('1', 'Next');
-            // parse number from result if possible
-            number  = 'T-' + (queue.length + history.length + 1);
-            calledAt = now();
-        } catch(e) {
-            number  = 'ERR';
-            calledAt = now();
-        }
-        queue.push({ number: number, calledAt: calledAt, status: 'waiting', selected: false });
-        renderQueue();
+            // finish current serving ticket first
+            if (servingTicket) {
+                var r = window.external.UpdateStatus(servingTicket.id, 'served');
+                if (r && r.indexOf('error') >= 0) { alert('Error: ' + r); return; }
+            }
+            // make first active ticket serving
+            if (queue.length > 0) {
+                var r2 = window.external.UpdateStatus(queue[0].id, 'serving');
+                if (r2 && r2.indexOf('error') >= 0) { alert('Error: ' + r2); return; }
+            }
+        } catch(e) { alert('callNext failed: ' + e.message); return; }
+        loadTickets();
+    }
+
+    function setServingStatus(status) {
+        if (!servingTicket) return;
+        try {
+            var r = window.external.UpdateStatus(servingTicket.id, status);
+            if (r && r.indexOf('error') >= 0) { alert('Error: ' + r); return; }
+        } catch(e) { alert('Status update failed: ' + e.message); return; }
+        loadTickets();
+    }
+
+    function gong() {
+        try { window.external.Gong(); } catch(e) {}
+        var btn = document.getElementById('ab-gong');
+        btn.style.background = '#fef3cd';
+        setTimeout(function() { btn.style.background = ''; }, 400);
     }
 
     function markSelected(result) {
@@ -499,14 +619,6 @@
         lastSelected = null;
         renderQueue();
         renderHistory();
-    }
-
-    function gong() {
-        try { window.external.Gong(); } catch(e) {}
-        // flash the button
-        var btn = document.getElementById('ab-gong');
-        btn.style.background = '#fef3cd';
-        setTimeout(function() { btn.style.background = ''; }, 400);
     }
 
     // ── Config ─────────────────────────────────────────────────────────────
@@ -628,6 +740,7 @@
     z-index:999; min-width:160px; font-size:13px;">
     <div class="ctx-item" id="ctx-gong"   onclick="ctxGong()">&#9679; Gong for selected</div>
     <div class="ctx-item" id="ctx-delete" onclick="ctxDelete()">&#10007; Delete selected</div>
+    <div class="ctx-item" id="ctx-print" onclick="ctxPrint()">&#128438; Print selected</div>
 </div>
 
 <style>

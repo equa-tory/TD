@@ -48,22 +48,34 @@ namespace Tokenizer
             catch (Exception ex) { return "error:" + ex.Message; }
         }
 
-        public string ButtonPress(string typeId, string title)
+        public void Gong() // TODO: change sound
+        {
+            System.Media.SystemSounds.Exclamation.Play();
+        }
+
+        public string PrintTicket(string id, string title)
         {
             try
             {
                 string printer = Config.Get("printer");
                 bool   debug   = Config.Get("printDebug") == "true";
-                ApiManager.ButtonPress(typeId, title, printer, debug);
+
+                Ticket ticket = new Ticket();
+                ticket.Type          = "";
+                ticket.Number        = 0;
+                ticket.DisplayNumber = title;  // use the display name directly
+                ticket.Timestamp     = DateTime.Now;
+
+                PrinterManager pm = new PrinterManager(printer);
+                pm.PrintTicket(ticket, debug);
                 return "ok";
             }
-            catch (Exception ex) { return "error:" + ex.Message; }
+            catch (Exception ex)
+            {
+                return "error:" + ex.GetType().Name + ": " + ex.Message;
+            }
         }
 
-        public void Gong() // TODO: change sound
-        {
-            System.Media.SystemSounds.Exclamation.Play();
-        }
 
         public string GetTickets()
         {

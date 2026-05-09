@@ -32,7 +32,7 @@ namespace Tokenizer
             {
                 string printer = Config.Get("printer");
                 bool   debug   = Config.Get("printDebug") == "true";
-                ApiManager.ButtonPress(typeId, title, printer, true); // force preview
+                ApiManager.ButtonPress(typeId, title, printer, debug); // force preview
                 return "ok";
             }
             catch (Exception ex)
