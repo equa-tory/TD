@@ -296,51 +296,6 @@
         lastSelected = null;
     }
 
-    // ── Fetch & split tickets from API ────────────────────────────────────
-    // function loadTickets() {
-    //     try {
-    //         var raw  = window.external.GetTickets();
-    //         var data = eval('(' + raw + ')');
-
-    //         // unwrap envelope if needed
-    //         var list = data;
-    //         if (!(list instanceof Array)) {
-    //             list = data.tickets || data.results || data.items || [data];
-    //         }
-
-    //         var newQueue   = [];
-    //         var newHistory = [];
-
-    //         for (var i = 0; i < list.length; i++) {
-    //             var t = list[i];
-    //             var status = (t.status || '').toLowerCase();
-    //             var entry = {
-    //                 id:       String(t.id   || i),
-    //                 number:   t.name  || t.number || t.display_number || ('T-' + i),
-    //                 calledAt: t.created_at ? formatDate(t.created_at) : '',
-    //                 status:   status,
-    //                 selected: false
-    //             };
-    //             if (status === 'active') {
-    //                 // preserve selection across refreshes
-    //                 entry.selected = isSelected('queue', entry.id);
-    //                 newQueue.push(entry);
-    //             } else {
-    //                 entry.selected = isSelected('history', entry.id);
-    //                 newHistory.push(entry);
-    //             }
-    //         }
-
-    //         queue   = newQueue;
-    //         history = newHistory;
-    //         renderQueue();
-    //         renderHistory();
-
-    //     } catch(e) {
-    //         // don't wipe the lists on a failed refresh
-    //     }
-    // }
-
     function isSelected(listName, id) {
         var data = listName === 'queue' ? queue : history;
         for (var i = 0; i < data.length; i++) {
@@ -545,30 +500,19 @@
 
     // ── Delete key ─────────────────────────────────────────────────────────
     document.onkeydown = function(e) {
-        if ((e.keyCode || e.which) !== 46) return;
-        var isQueue  = document.getElementById('list-queue').className.indexOf('active') >= 0;
-        deleteSelected(isQueue ? 'queue' : 'history');
-    };
+        e = e || window.event;
 
-    // ── Keyboard ─────────────────────────────────────────────────────────
-    // document.onkeydown = function(e) {
-    //     if ((e.keyCode || e.which) !== 46) return; // Delete key
-    //     var isQueue   = document.getElementById('list-queue').className.indexOf('active') >= 0;
-    //     var data      = isQueue ? queue : history;
-    //     var remaining = [];
-    //     for (var i = 0; i < data.length; i++) {
-    //         // if (!data[i].selected) remaining.push(data[i]);
-            
-    //     }
-    //     // if (isQueue) { queue = remaining; renderQueue(); }
-    //     // else         { history = remaining; renderHistory(); }
-    //     lastSelected = null;
-    // };
-    document.onkeydown = function(e) {
-        if ((e.keyCode || e.which) !== 32) return; // Space key
-        var isQueue   = document.getElementById('list-queue').className.indexOf('active') >= 0;
-        var data      = isQueue ? queue : history;
-        // alert(data[0].id);
+        var code = e.keyCode || e.which;
+
+        if (code === 46) { // del
+            if (e.preventDefault)
+                e.preventDefault();
+
+            e.returnValue = false;
+            var isQueue  = document.getElementById('list-queue').className.indexOf('active') >= 0;
+            deleteSelected(isQueue ? 'queue' : 'history');
+            return false;
+        }
     };
 
     // ── Actions ────────────────────────────────────────────────────────────
