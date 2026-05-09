@@ -41,9 +41,6 @@ namespace Tokenizer
         {
             try
             {
-                // string printer = Config.Get("printer");
-                // bool   debug   = Config.Get("printDebug") == "true";
-                // ApiManager.ButtonPress(typeId, typeId, printer, debug);
                 ApiManager.CreateTicket(Int32.Parse(typeId));
                 return "ok";
             }
@@ -62,9 +59,15 @@ namespace Tokenizer
             catch (Exception ex) { return "error:" + ex.Message; }
         }
 
-        public void Gong()
+        public void Gong() // TODO: change sound
         {
             System.Media.SystemSounds.Exclamation.Play();
+        }
+
+        public string GetTickets()
+        {
+            try   { return ApiManager.Get("/ticket/list/"); }
+            catch (Exception ex) { return "{\"error\":\"" + ex.Message.Replace("\"","'") + "\"}"; }
         }
     }
 

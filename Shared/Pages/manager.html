@@ -181,8 +181,11 @@
     var queue   = [];   // { id, number, calledAt, status }
     var history = [];
     var lastSelected = null;   // index for shift-click range
+    var refreshTimer = null;
+    var REFRESH_MS   = 3000; // poll every 3 seconds
 
     // ── Navigation ─────────────────────────────────────────────────────────
+    // update showPage to pause/resume:
     function showPage(name) {
         var ids = ['manager','config','batch'];
         for (var i = 0; i < ids.length; i++) {
@@ -191,8 +194,12 @@
         }
         document.getElementById('page-' + name).className = 'page active';
         document.getElementById('nav-'  + name).className = 'active';
-        if (name === 'batch') loadTypes();
-        if (name === 'config') loadCurrent();
+
+        if (name === 'manager') { startRefresh(); }
+        else                    { stopRefresh();  }
+
+        if (name === 'batch')   loadTypes();
+        if (name === 'config')  loadCurrent();
     }
 
     function showTab(name) {
@@ -203,22 +210,85 @@
         lastSelected = null;
     }
 
+    // ── Fetch & split tickets from API ────────────────────────────────────
+    function loadTickets() {
+        try {
+            var raw  = window.external.GetTickets();
+            var data = eval('(' + raw + ')');
+
+            // unwrap envelope if needed
+            var list = data;
+            if (!(list instanceof Array)) {
+                list = data.tickets || data.results || data.items || [data];
+            }
+
+            var newQueue   = [];
+            var newHistory = [];
+
+            for (var i = 0; i < list.length; i++) {
+                var t = list[i];
+                var status = (t.status || '').toLowerCase();
+                var entry = {
+                    id:       String(t.id   || i),
+                    number:   t.name  || t.number || t.display_number || ('T-' + i),
+                    calledAt: t.created_at ? formatDate(t.created_at) : '',
+                    status:   status,
+                    selected: false
+                };
+                if (status === 'active') {
+                    // preserve selection across refreshes
+                    entry.selected = isSelected('queue', entry.id);
+                    newQueue.push(entry);
+                } else {
+                    entry.selected = isSelected('history', entry.id);
+                    newHistory.push(entry);
+                }
+            }
+
+            queue   = newQueue;
+            history = newHistory;
+            renderQueue();
+            renderHistory();
+
+        } catch(e) {
+            // don't wipe the lists on a failed refresh
+        }
+    }
+
+    function isSelected(listName, id) {
+        var data = listName === 'queue' ? queue : history;
+        for (var i = 0; i < data.length; i++) {
+            if (data[i].id === id && data[i].selected) return true;
+        }
+        return false;
+    }
+
+    // ── Realtime polling ──────────────────────────────────────────────────
+    function startRefresh() {
+        loadTickets();
+        refreshTimer = setInterval(loadTickets, REFRESH_MS);
+    }
+
+    function stopRefresh() {
+        if (refreshTimer) { clearInterval(refreshTimer); refreshTimer = null; }
+    }
+
     // ── Queue rendering ────────────────────────────────────────────────────
     function renderQueue() {
         var tb = document.getElementById('tbody-queue');
         tb.innerHTML = '';
-        for (var i = 0; i < queue.length; i++) { // TODO: gives error on windows xp
-            var r = queue[i];
+        for (var i = 0; i < queue.length; i++) {
+            var r  = queue[i];
             var tr = document.createElement('tr');
             if (r.selected) tr.className = 'selected';
-            tr.setAttribute('data-idx', i);
+            tr.setAttribute('data-id',   r.id);
             tr.setAttribute('data-list', 'queue');
             tr.onclick = function(e) { rowClick(e, this); };
             tr.innerHTML =
                 '<td>' + (i+1) + '</td>' +
                 '<td><b>' + escHtml(r.number) + '</b></td>' +
                 '<td>' + escHtml(r.calledAt) + '</td>' +
-                '<td class="result-pending">' + escHtml(r.status) + '</td>';
+                '<td class="result-pending">waiting</td>';
             tb.appendChild(tr);
         }
     }
@@ -227,36 +297,45 @@
         var tb = document.getElementById('tbody-history');
         tb.innerHTML = '';
         for (var i = 0; i < history.length; i++) {
-            var r = history[i];
-            var cls = r.result === 'served'    ? 'result-served'
-                    : r.result === 'notserved' ? 'result-notserved'
-                    : r.result === 'missed'    ? 'result-missed'   : '';
+            var r   = history[i];
+            var cls = r.status === 'served'     ? 'result-served'
+                    : r.status === 'not_served' ? 'result-notserved'
+                    : r.status === 'not_come'   ? 'result-missed' : '';
+            var label = r.status === 'served'     ? 'served'
+                    : r.status === 'not_served' ? 'not served'
+                    : r.status === 'not_come'   ? 'missed' : r.status;
             var tr = document.createElement('tr');
             if (r.selected) tr.className = 'selected';
-            tr.setAttribute('data-idx', i);
+            tr.setAttribute('data-id',   r.id);
             tr.setAttribute('data-list', 'history');
             tr.onclick = function(e) { rowClick(e, this); };
             tr.innerHTML =
                 '<td>' + (i+1) + '</td>' +
                 '<td><b>' + escHtml(r.number) + '</b></td>' +
                 '<td>' + escHtml(r.calledAt) + '</td>' +
-                '<td class="' + cls + '">' + escHtml(r.result) + '</td>';
+                '<td class="' + cls + '">' + label + '</td>';
             tb.appendChild(tr);
         }
     }
-
-    // ── Row selection (click + shift+click) ────────────────────────────────
+    
+    // ── Row selection — now uses data-id instead of data-idx ──────────────
     function rowClick(e, tr) {
         var listName = tr.getAttribute('data-list');
-        var idx      = parseInt(tr.getAttribute('data-idx'), 10);
+        var id       = tr.getAttribute('data-id');
         var data     = listName === 'queue' ? queue : history;
+
+        // find index by id
+        var idx = -1;
+        for (var k = 0; k < data.length; k++) {
+            if (data[k].id === id) { idx = k; break; }
+        }
+        if (idx < 0) return;
 
         if (e.shiftKey && lastSelected !== null && lastSelected.list === listName) {
             var from = Math.min(lastSelected.idx, idx);
             var to   = Math.max(lastSelected.idx, idx);
             for (var i = from; i <= to; i++) data[i].selected = true;
         } else {
-            // deselect all
             for (var j = 0; j < data.length; j++) data[j].selected = false;
             data[idx].selected = true;
             lastSelected = { list: listName, idx: idx };
@@ -415,10 +494,19 @@
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
+    function formatDate(iso) {
+        try {
+            // "2026-05-07T21:14:24.761837" → "21:14:24"
+            var t = iso.split('T');
+            if (t.length > 1) return t[1].substring(0, 8);
+            return iso;
+        } catch(e) { return iso; }
+    }
 
     // ── Init ───────────────────────────────────────────────────────────────
-    renderQueue();
-    renderHistory();
+    // renderQueue();
+    // renderHistory();
+    startRefresh();
 </script>
 </body>
 </html>
