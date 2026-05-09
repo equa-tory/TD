@@ -63,24 +63,15 @@ namespace Tokenizer.Shared
         // Specific endpoints
         // ----------------------------------------------------------------
 
-        public static string GetTicketTypes()
-        {
-            return Get("/ticket/types/");
-        }
-
+        // BOOK \/
         public static string CreateTicket(int ticketTypeId)
         {
             Dictionary<string, string> p = new Dictionary<string, string>();
             p.Add("ticket_type_id", ticketTypeId.ToString());
             return Post("/ticket/", p);
         }
-
-        // Add new endpoints here, e.g.:
-        // public static string GetTicket(int id)
-        // {
-        //     return Get("/ticket/" + id + "/");
-        // }
-
+    
+        // PRINT \/
         public static void ButtonPress(string typeId, string title, string printerName, bool printDebug)
         {
             int id;

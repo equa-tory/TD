@@ -31,12 +31,6 @@ namespace Tokenizer
             catch (Exception ex) { return "[\"ERROR: " + ex.Message.Replace("\"", "'") + "\"]"; }
         }
 
-        public string Test()
-        {
-            Console.WriteLine("test");
-            return "test ok";
-        }
-
         public string FetchTypes()
         {
             try   { return ApiManager.Get("/ticket/types/"); }
@@ -47,9 +41,10 @@ namespace Tokenizer
         {
             try
             {
-                string printer = Config.Get("printer");
-                bool   debug   = Config.Get("printDebug") == "true";
-                ApiManager.ButtonPress(typeId, typeId, printer, debug);
+                // string printer = Config.Get("printer");
+                // bool   debug   = Config.Get("printDebug") == "true";
+                // ApiManager.ButtonPress(typeId, typeId, printer, debug);
+                ApiManager.CreateTicket(Int32.Parse(typeId));
                 return "ok";
             }
             catch (Exception ex) { return "error:" + ex.Message; }

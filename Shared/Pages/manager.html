@@ -173,7 +173,6 @@
         <button class="btn" onclick="createBatch()">Create Tickets</button>
         <div id="batchStatus" class="status"></div>
     </div>
-    <button onclick="testCom()">Test COM</button>
 </div>
 
 <script type="text/javascript">
@@ -208,7 +207,7 @@
     function renderQueue() {
         var tb = document.getElementById('tbody-queue');
         tb.innerHTML = '';
-        for (var i = 0; i < queue.length; i++) {
+        for (var i = 0; i < queue.length; i++) { // TODO: gives error on windows xp
             var r = queue[i];
             var tr = document.createElement('tr');
             if (r.selected) tr.className = 'selected';
@@ -364,15 +363,6 @@
     }
 
     // ── Batch ──────────────────────────────────────────────────────────────
-    function testCom() {
-        var out = '';
-        // try { out += 'GetConfig: ' + window.external.GetConfig('apiUrl') + '\n'; } catch(e) { out += 'GetConfig FAIL: ' + e.message + '\n'; }
-        // try { out += 'FetchTypes: ' + window.external.FetchTypes().substring(0, 30); } catch(e) { out += 'FetchTypes FAIL: ' + e.message; }
-        // alert(out);
-        out = window.external.Test();
-        alert(out);
-    }
-
     function loadTypes() {
         var sel = document.getElementById('ticketType');
         try {
