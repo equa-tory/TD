@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Media;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing.Printing;
@@ -48,9 +49,37 @@ namespace Tokenizer
             catch (Exception ex) { return "error:" + ex.Message; }
         }
 
-        public void Gong() // TODO: change sound
+        // System.Media.SystemSounds.Exclamation.Play();
+        public void Gong(string ticketNumber)
         {
-            System.Media.SystemSounds.Exclamation.Play();
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate(object state)
+            {
+                try
+                {
+                    string dir = Application.StartupPath + @"\Audio\";
+
+                    // play welcome.wav first
+                    PlaySync(dir + "welcome.wav");
+
+                    // extract only digits from ticket number (e.g. "А-042" → "042")
+                    foreach (char c in ticketNumber)
+                    {
+                        if (c >= '0' && c <= '9')
+                        {
+                            PlaySync(dir + c + ".wav");
+                        }
+                    }
+                }
+                catch { }
+            });
+        }
+        private void PlaySync(string path)
+        {
+            if (!System.IO.File.Exists(path)) return;
+            using (SoundPlayer player = new SoundPlayer(path))
+            {
+                player.PlaySync(); // blocks until file finishes
+            }
         }
 
         public string PrintTicket(string id, string title)

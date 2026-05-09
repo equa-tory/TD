@@ -273,6 +273,7 @@
         document.getElementById('ab-served').disabled     = !hasServing;
         document.getElementById('ab-notserved').disabled  = !hasServing;
         document.getElementById('ab-missed').disabled     = !hasServing;
+        document.getElementById('ab-gong').disabled       = !hasServing;
     }
     
     // ── Navigation ─────────────────────────────────────────────────────────
@@ -570,7 +571,10 @@ function renderHistory() {
     }
 
     function gong() {
-        try { window.external.Gong(); } catch(e) {}
+        try {
+            var num = servingTicket ? servingTicket.number : '';
+            window.external.Gong(num);
+        } catch(e) {}
         var btn = document.getElementById('ab-gong');
         btn.style.background = '#fef3cd';
         setTimeout(function() { btn.style.background = ''; }, 400);
