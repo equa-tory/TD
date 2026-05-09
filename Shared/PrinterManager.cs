@@ -44,7 +44,7 @@ namespace Tokenizer.Shared
             _printerName = printerName;
         }
 
-        public void PrintTicket(Ticket ticket, bool preview)
+        public void PrintTicket(Ticket ticket, bool preview) // TODO: doesn't print but shows
         {
             PrintDocument doc = new PrintDocument();
 

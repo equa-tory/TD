@@ -111,6 +111,10 @@
 <!-- ══ Manager page ══════════════════════════════════════════════════════ -->
 <div id="page-manager" class="page active">
 
+    <div id="currentTicket">
+        <!-- Show current ticket id, time -->
+    </div>
+
     <div id="actionbar">
         <button id="btn-next" onclick="callNext()">&#9654; Next</button>
         <div class="action-group">
@@ -150,6 +154,8 @@
         <h3 style="margin-bottom:8px;">Config</h3>
         <label>API URL:</label>
         <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+        <label>Ticket refresh rate:</label>
+        <input type="text" id="refreshRate" placeholder="3000" />
         <label>Printer:</label>
         <select id="printer"><option value="">— No printer —</option></select>
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
@@ -266,7 +272,7 @@
     // ── Realtime polling ──────────────────────────────────────────────────
     function startRefresh() {
         loadTickets();
-        refreshTimer = setInterval(loadTickets, REFRESH_MS);
+        refreshTimer = setInterval(loadTickets, window.external.GetConfig('pollInterval') || REFRESH_MS);
     }
 
     function stopRefresh() {
@@ -283,7 +289,23 @@
             if (r.selected) tr.className = 'selected';
             tr.setAttribute('data-id',   r.id);
             tr.setAttribute('data-list', 'queue');
-            tr.onclick = function(e) { rowClick(e, this); };
+            tr.onclick       = function(e) { rowClick(e, this); };
+            tr.oncontextmenu = function(e) {
+                var id       = this.getAttribute('data-id');
+                var listName = this.getAttribute('data-list');
+                var data     = listName === 'queue' ? queue : history;
+
+                // check if this row is already selected
+                var alreadySelected = false;
+                for (var k = 0; k < data.length; k++) {
+                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+                }
+
+                // only change selection if clicking an unselected row
+                if (!alreadySelected) rowClick(e, this);
+
+                showCtxMenu(e, listName);
+            };
             tr.innerHTML =
                 '<td>' + (i+1) + '</td>' +
                 '<td><b>' + escHtml(r.number) + '</b></td>' +
@@ -308,7 +330,23 @@
             if (r.selected) tr.className = 'selected';
             tr.setAttribute('data-id',   r.id);
             tr.setAttribute('data-list', 'history');
-            tr.onclick = function(e) { rowClick(e, this); };
+            tr.onclick       = function(e) { rowClick(e, this); };
+            tr.oncontextmenu = function(e) {
+                var id       = this.getAttribute('data-id');
+                var listName = this.getAttribute('data-list');
+                var data     = listName === 'queue' ? queue : history;
+
+                // check if this row is already selected
+                var alreadySelected = false;
+                for (var k = 0; k < data.length; k++) {
+                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+                }
+
+                // only change selection if clicking an unselected row
+                if (!alreadySelected) rowClick(e, this);
+
+                showCtxMenu(e, listName);
+            };
             tr.innerHTML =
                 '<td>' + (i+1) + '</td>' +
                 '<td><b>' + escHtml(r.number) + '</b></td>' +
@@ -344,18 +382,90 @@
         if (listName === 'queue') renderQueue(); else renderHistory();
     }
 
+    // ── Context menu ───────────────────────────────────────────────────────
+    var ctxTargetList = 'queue';
+
+    function showCtxMenu(e, listName) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        ctxTargetList = listName;
+        var menu = document.getElementById('ctx-menu');
+        menu.style.display = 'block';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top  = e.clientY + 'px';
+    }
+
+    function hideCtxMenu() {
+        document.getElementById('ctx-menu').style.display = 'none';
+    }
+
+    document.onclick = function() { hideCtxMenu(); };
+
+    function getSelectedIds(listName) {
+        var data = listName === 'queue' ? queue : history;
+        var ids  = [];
+        for (var i = 0; i < data.length; i++) {
+            if (data[i].selected) ids.push(data[i].id);
+        }
+        return ids;
+    }
+
+    function ctxDelete() {
+        hideCtxMenu();
+        deleteSelected(ctxTargetList);
+    }
+
+    function ctxGong() {
+        hideCtxMenu();
+        try { window.external.Gong(); } catch(e) {}
+    }
+
+    function deleteSelected(listName) {
+        var ids = getSelectedIds(listName);
+        if (ids.length === 0) return;
+
+        var result;
+        try {
+            result = window.external.DeleteTickets(ids.join(','));
+        } catch(e) {
+            alert('Delete failed: ' + e.message);
+            return;
+        }
+
+        if (result && result.indexOf('error') >= 0) {
+            alert('Delete error: ' + result);
+            return;
+        }
+
+        lastSelected = null;
+        loadTickets(); // refresh from API
+    }
+
     // ── Delete key ─────────────────────────────────────────────────────────
     document.onkeydown = function(e) {
-        if ((e.keyCode || e.which) !== 46) return; // Delete key
+        if ((e.keyCode || e.which) !== 46) return;
+        var isQueue  = document.getElementById('list-queue').className.indexOf('active') >= 0;
+        deleteSelected(isQueue ? 'queue' : 'history');
+    };
+
+    // ── Keyboard ─────────────────────────────────────────────────────────
+    // document.onkeydown = function(e) {
+    //     if ((e.keyCode || e.which) !== 46) return; // Delete key
+    //     var isQueue   = document.getElementById('list-queue').className.indexOf('active') >= 0;
+    //     var data      = isQueue ? queue : history;
+    //     var remaining = [];
+    //     for (var i = 0; i < data.length; i++) {
+    //         // if (!data[i].selected) remaining.push(data[i]);
+            
+    //     }
+    //     // if (isQueue) { queue = remaining; renderQueue(); }
+    //     // else         { history = remaining; renderHistory(); }
+    //     lastSelected = null;
+    // };
+    document.onkeydown = function(e) {
+        if ((e.keyCode || e.which) !== 32) return; // Space key
         var isQueue   = document.getElementById('list-queue').className.indexOf('active') >= 0;
         var data      = isQueue ? queue : history;
-        var remaining = [];
-        for (var i = 0; i < data.length; i++) {
-            if (!data[i].selected) remaining.push(data[i]);
-        }
-        if (isQueue) { queue = remaining; renderQueue(); }
-        else         { history = remaining; renderHistory(); }
-        lastSelected = null;
+        // alert(data[0].id);
     };
 
     // ── Actions ────────────────────────────────────────────────────────────
@@ -422,6 +532,7 @@
     function saveConfig() {
         window.external.SaveConfig('apiUrl',  document.getElementById('apiUrl').value);
         window.external.SaveConfig('printer', document.getElementById('printer').value);
+        window.external.SaveConfig('refreshRate', document.getElementById('refreshRate').value);
         var s = document.getElementById('status');
         s.style.display = 'block';
         setTimeout(function() { s.style.display = 'none'; }, 2000);
@@ -429,6 +540,7 @@
 
     function loadCurrent() {
         document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
+        document.getElementById('refreshRate').value = window.external.GetConfig('refreshRate');
         fillPrinters(window.external.GetConfig('printer'));
         var dbgVal = window.external.GetConfig('printDebug');
         document.getElementById('debugBtn').innerText = 'Debug Print: ' + (dbgVal || 'false');
@@ -508,5 +620,19 @@
     // renderHistory();
     startRefresh();
 </script>
+
+<div id="ctx-menu" style="
+    display:none; position:fixed; background:#fff;
+    border:1px solid #bbb; border-radius:3px;
+    box-shadow:2px 2px 6px rgba(0,0,0,0.2);
+    z-index:999; min-width:160px; font-size:13px;">
+    <div class="ctx-item" id="ctx-gong"   onclick="ctxGong()">&#9679; Gong for selected</div>
+    <div class="ctx-item" id="ctx-delete" onclick="ctxDelete()">&#10007; Delete selected</div>
+</div>
+
+<style>
+    .ctx-item { padding: 8px 16px; cursor: pointer; }
+    .ctx-item:hover { background: #f0f0f0; }
+</style>
 </body>
 </html>

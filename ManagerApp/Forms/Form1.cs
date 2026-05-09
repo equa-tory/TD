@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing.Printing;
 using Tokenizer.Shared;
+using System.Collections.Generic;
 
 namespace Tokenizer
 {
@@ -68,6 +69,37 @@ namespace Tokenizer
         {
             try   { return ApiManager.Get("/ticket/list/"); }
             catch (Exception ex) { return "{\"error\":\"" + ex.Message.Replace("\"","'") + "\"}"; }
+        }
+
+        public string DeleteTickets(string ids)
+        {
+            try
+            {
+                // ids = "236,237" → "ticket_ids=236&ticket_ids=237"
+                string[] parts = ids.Split(',');
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+                for (int i = 0; i < parts.Length; i++)
+                {
+                    if (i > 0) sb.Append("&");
+                    sb.Append("ticket_ids=");
+                    sb.Append(parts[i].Trim());
+                }
+                return ApiManager.Delete("/delete/", sb.ToString());
+            }
+            catch (Exception ex) { return "error:" + ex.Message; }
+        }
+        
+        public string UpdateStatus(string id, string status)
+        {
+            try
+            {
+                System.Collections.Generic.Dictionary<string, string> p = 
+                    new System.Collections.Generic.Dictionary<string, string>();
+                p.Add("id", id);
+                p.Add("status", status);
+                return ApiManager.Post("/ticket/", p);
+            }
+            catch (Exception ex) { return "error:" + ex.Message; }
         }
     }
 

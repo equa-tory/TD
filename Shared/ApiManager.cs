@@ -59,6 +59,12 @@ namespace Tokenizer.Shared
             return Post(path, null, null);
         }
 
+        public static string Delete(string path, string rawQuery)
+        {
+            string url = BaseUrl + path + (string.IsNullOrEmpty(rawQuery) ? "" : "?" + rawQuery);
+            return SendRequest(url, "DELETE", null);
+        }
+
         // ----------------------------------------------------------------
         // Specific endpoints
         // ----------------------------------------------------------------
@@ -111,27 +117,26 @@ namespace Tokenizer.Shared
 
         private static string SendRequest(string url, string method, string jsonBody)
         {
-            HttpWebRequest request = null;
+            HttpWebRequest  request  = null;
             HttpWebResponse response = null;
-
             try
             {
                 request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = method;
-                request.ContentType = "application/json";
-                request.Timeout = 15000;
+                request.Method        = method;
+                request.ContentType   = "application/json";
+                request.Timeout       = 15000;
                 request.ReadWriteTimeout = 15000;
-                request.UserAgent = "Tokenizer/1.0 (.NET 3.5)";
-                request.KeepAlive = false;
+                request.UserAgent     = "Tokenizer/1.0 (.NET 3.5)";
+                request.KeepAlive     = false;
 
-                if (method == "POST")
+                if (method == "POST" || method == "DELETE")
                 {
                     if (!string.IsNullOrEmpty(jsonBody))
                     {
-                        byte[] bodyBytes = Encoding.UTF8.GetBytes(jsonBody);
+                        byte[] bodyBytes = System.Text.Encoding.UTF8.GetBytes(jsonBody);
                         request.ContentLength = bodyBytes.Length;
-                        using (Stream reqStream = request.GetRequestStream())
-                            reqStream.Write(bodyBytes, 0, bodyBytes.Length);
+                        using (Stream s = request.GetRequestStream())
+                            s.Write(bodyBytes, 0, bodyBytes.Length);
                     }
                     else
                     {
@@ -140,17 +145,13 @@ namespace Tokenizer.Shared
                 }
 
                 response = (HttpWebResponse)request.GetResponse();
-
-                using (Stream responseStream = response.GetResponseStream())
-                using (StreamReader reader = new StreamReader(responseStream, Encoding.UTF8))
-                {
+                using (Stream rs = response.GetResponseStream())
+                using (StreamReader reader = new StreamReader(rs, System.Text.Encoding.UTF8))
                     return reader.ReadToEnd();
-                }
             }
             finally
             {
-                if (response != null)
-                    response.Close();
+                if (response != null) response.Close();
             }
         }
 
