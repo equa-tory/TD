@@ -121,9 +121,6 @@ namespace Tokenizer
         public Form1()
         {
             InitializeComponent();
-            // this.Text   = "Manager";
-            // this.Width  = 800;
-            // this.Height = 600;
 
             WebBrowser browser = new WebBrowser();
             browser.Dock = DockStyle.Fill;
@@ -131,6 +128,45 @@ namespace Tokenizer
 
             browser.ObjectForScripting = new ScriptManager();
             browser.Url = new Uri("file:///" + Application.StartupPath + @"\Pages\manager.html");
+            RestorePosition();
         }
+
+        private void RestorePosition()
+        {
+            try
+            {
+                int x = int.Parse(Config.Get("windowX"));
+                int y = int.Parse(Config.Get("windowY"));
+                int w = int.Parse(Config.Get("windowW"));
+                int h = int.Parse(Config.Get("windowH"));
+
+                // check the saved position is still on a valid screen
+                System.Drawing.Point p = new System.Drawing.Point(x, y);
+                bool onScreen = false;
+                foreach (Screen s in Screen.AllScreens)
+                {
+                    if (s.WorkingArea.Contains(p)) { onScreen = true; break; }
+                }
+
+                if (onScreen)
+                {
+                    this.StartPosition = FormStartPosition.Manual;
+                    this.Location = new System.Drawing.Point(x, y);
+                    this.Size     = new System.Drawing.Size(w, h);
+                }
+            }
+            catch { } // no saved position yet — use default
+        }
+        
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // save position and size
+            Config.Set("windowX", this.Location.X.ToString());
+            Config.Set("windowY", this.Location.Y.ToString());
+            Config.Set("windowW", this.Size.Width.ToString());
+            Config.Set("windowH", this.Size.Height.ToString());
+            base.OnFormClosing(e);
+        }
+
     }
 }
