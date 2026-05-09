@@ -239,10 +239,10 @@
             queue         = newQueue;
             history       = newHistory;
 
-            renderServing();
-            renderQueue();
-            renderHistory();
-            updateButtons();
+            try { renderServing(); } catch(e) { alert('renderServing: ' + e.message); }
+            try { renderQueue();   } catch(e) { alert('renderQueue: '   + e.message); }
+            try { renderHistory(); } catch(e) { alert('renderHistory: ' + e.message); }
+            try { updateButtons(); } catch(e) { alert('updateButtons: ' + e.message); }
 
         } catch(e) {
             // show error in queue table so you can see what's wrong
@@ -389,40 +389,75 @@ function renderHistory() {
 
     // ── Row selection — now uses data-id instead of data-idx ──────────────
     function rowClick(e, tr) {
+
+        e = e || window.event;
+
+        var shift = e && e.shiftKey;
+
         var listName = tr.getAttribute('data-list');
         var id       = tr.getAttribute('data-id');
-        var data     = listName === 'queue' ? queue : history;
 
-        // find index by id
+        var data = listName === 'queue' ? queue : history;
+
         var idx = -1;
+
         for (var k = 0; k < data.length; k++) {
-            if (data[k].id === id) { idx = k; break; }
+            if (data[k].id === id) {
+                idx = k;
+                break;
+            }
         }
+
         if (idx < 0) return;
 
-        if (e.shiftKey && lastSelected !== null && lastSelected.list === listName) {
+        if (shift && lastSelected !== null && lastSelected.list === listName) {
+
             var from = Math.min(lastSelected.idx, idx);
             var to   = Math.max(lastSelected.idx, idx);
-            for (var i = from; i <= to; i++) data[i].selected = true;
+
+            for (var i = from; i <= to; i++)
+                data[i].selected = true;
+
         } else {
-            for (var j = 0; j < data.length; j++) data[j].selected = false;
+
+            for (var j = 0; j < data.length; j++)
+                data[j].selected = false;
+
             data[idx].selected = true;
-            lastSelected = { list: listName, idx: idx };
+
+            lastSelected = {
+                list: listName,
+                idx: idx
+            };
         }
 
-        if (listName === 'queue') renderQueue(); else renderHistory();
+        if (listName === 'queue')
+            renderQueue();
+        else
+            renderHistory();
     }
 
     // ── Context menu ───────────────────────────────────────────────────────
     var ctxTargetList = 'queue';
 
     function showCtxMenu(e, listName) {
-        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+
+        e = e || window.event;
+
+        var x = e.clientX || (e && e.x) || 0;
+        var y = e.clientY || (e && e.y) || 0;
+
+        if (e.preventDefault)
+            e.preventDefault();
+
+        e.returnValue = false;
+
         ctxTargetList = listName;
+
         var menu = document.getElementById('ctx-menu');
         menu.style.display = 'block';
-        menu.style.left = e.clientX + 'px';
-        menu.style.top  = e.clientY + 'px';
+        menu.style.left = x + 'px';
+        menu.style.top  = y + 'px';
     }
 
     function hideCtxMenu() {
