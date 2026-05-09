@@ -130,7 +130,7 @@ namespace Tokenizer.Shared
                 request.ContentType = "application/json";
                 request.Timeout = 15000;
                 request.ReadWriteTimeout = 15000;
-                request.UserAgent = "TicketApp/1.0 (.NET 3.5)";
+                request.UserAgent = "Tokenizer/1.0 (.NET 3.5)";
                 request.KeepAlive = false;
 
                 if (method == "POST")

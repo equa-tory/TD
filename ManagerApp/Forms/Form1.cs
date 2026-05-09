@@ -3,12 +3,12 @@ using System.Text;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing.Printing;
-using TicketApp.Shared;
+using Tokenizer.Shared;
 
 namespace Tokenizer
 {
     [ComVisible(true)]
-    public class ScriptManager  // no interface, no ClassInterface attribute — same as buttons
+    public class ScriptManager
     {
         public void SaveConfig(string key, string value) { Config.Set(key, value); }
         public string GetConfig(string key) { return Config.Get(key); }
@@ -29,6 +29,12 @@ namespace Tokenizer
                 return sb.ToString();
             }
             catch (Exception ex) { return "[\"ERROR: " + ex.Message.Replace("\"", "'") + "\"]"; }
+        }
+
+        public string Test()
+        {
+            Console.WriteLine("test");
+            return "test ok";
         }
 
         public string FetchTypes()
@@ -70,22 +76,19 @@ namespace Tokenizer
 
     public partial class Form1 : Form
     {
-        private MenuStrip menuStrip;
-
         public Form1()
         {
             InitializeComponent();
-            this.Text   = "Manager";
-            this.Width  = 800;
-            this.Height = 600;
-
-            SetupMenu();
+            // this.Text   = "Manager";
+            // this.Width  = 800;
+            // this.Height = 600;
 
             WebBrowser browser = new WebBrowser();
             browser.Dock = DockStyle.Fill;
+            this.Controls.Add(browser);
+
             browser.ObjectForScripting = new ScriptManager();
             browser.Url = new Uri("file:///" + Application.StartupPath + @"\Pages\manager.html");
-            this.Controls.Add(browser);
         }
     }
 }
