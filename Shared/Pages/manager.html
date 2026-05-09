@@ -201,6 +201,7 @@
     var servingTicket = null; // { id, number, calledAt }
     
     function loadTickets() {
+        var dbgEl = document.getElementById('printerDebug'); // reuse as debug output temporarily
         try {
             var raw  = window.external.GetTickets();
             var data = eval('(' + raw + ')');
@@ -223,7 +224,6 @@
                     status:   status,
                     selected: false
                 };
-
                 if (status === 'serving') {
                     newServing = entry;
                 } else if (status === 'active') {
@@ -244,7 +244,12 @@
             renderHistory();
             updateButtons();
 
-        } catch(e) { }
+        } catch(e) {
+            // show error in queue table so you can see what's wrong
+            var tb = document.getElementById('tbody-queue');
+            alert('loadTickets error: ' + e.message);
+            // if (tb) tb.innerHTML = '<tr><td colspan="4" style="color:red;padding:8px;">loadTickets error: ' + e.message + '</td></tr>';
+        }
     }
 
     function renderServing() {
@@ -318,82 +323,70 @@
     }
 
     // ── Queue rendering ────────────────────────────────────────────────────
-    function renderQueue() {
-        var tb = document.getElementById('tbody-queue');
-        tb.innerHTML = '';
-        for (var i = 0; i < queue.length; i++) {
-            var r  = queue[i];
-            var tr = document.createElement('tr');
-            if (r.selected) tr.className = 'selected';
-            tr.setAttribute('data-id',   r.id);
-            tr.setAttribute('data-list', 'queue');
-            tr.onclick       = function(e) { rowClick(e, this); };
-            tr.oncontextmenu = function(e) {
-                var id       = this.getAttribute('data-id');
-                var listName = this.getAttribute('data-list');
-                var data     = listName === 'queue' ? queue : history;
-
-                // check if this row is already selected
-                var alreadySelected = false;
-                for (var k = 0; k < data.length; k++) {
-                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
-                }
-
-                // only change selection if clicking an unselected row
-                if (!alreadySelected) rowClick(e, this);
-
-                showCtxMenu(e, listName);
-            };
-            tr.innerHTML =
-                '<td>' + (i+1) + '</td>' +
-                '<td><b>' + escHtml(r.number) + '</b></td>' +
-                '<td>' + escHtml(r.calledAt) + '</td>' +
-                '<td class="result-pending">waiting</td>';
-            tb.appendChild(tr);
-        }
+function renderQueue() {
+    var tb = document.getElementById('tbody-queue');
+    while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
+    for (var i = 0; i < queue.length; i++) {
+        var r  = queue[i];
+        var tr = tb.insertRow(-1);
+        if (r.selected) tr.className = 'selected';
+        tr.setAttribute('data-id',   r.id);
+        tr.setAttribute('data-list', 'queue');
+        tr.onclick       = function(e) { rowClick(e, this); };
+        tr.oncontextmenu = function(e) {
+            var id = this.getAttribute('data-id');
+            var listName = this.getAttribute('data-list');
+            var data = listName === 'queue' ? queue : history;
+            var alreadySelected = false;
+            for (var k = 0; k < data.length; k++) {
+                if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+            }
+            if (!alreadySelected) rowClick(e, this);
+            showCtxMenu(e, listName);
+        };
+        var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
+        var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
+        var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
+        var c3 = tr.insertCell(3); c3.innerHTML = 'waiting';
+        c3.className = 'result-pending';
     }
+}
 
-    function renderHistory() {
-        var tb = document.getElementById('tbody-history');
-        tb.innerHTML = '';
-        for (var i = 0; i < history.length; i++) {
-            var r   = history[i];
-            var cls = r.status === 'served'     ? 'result-served'
-                    : r.status === 'not_served' ? 'result-notserved'
-                    : r.status === 'not_come'   ? 'result-missed' : '';
-            var label = r.status === 'served'     ? 'served'
-                    : r.status === 'not_served' ? 'not served'
-                    : r.status === 'not_come'   ? 'missed' : r.status;
-            var tr = document.createElement('tr');
-            if (r.selected) tr.className = 'selected';
-            tr.setAttribute('data-id',   r.id);
-            tr.setAttribute('data-list', 'history');
-            tr.onclick       = function(e) { rowClick(e, this); };
-            tr.oncontextmenu = function(e) {
-                var id       = this.getAttribute('data-id');
-                var listName = this.getAttribute('data-list');
-                var data     = listName === 'queue' ? queue : history;
-
-                // check if this row is already selected
-                var alreadySelected = false;
-                for (var k = 0; k < data.length; k++) {
-                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
-                }
-
-                // only change selection if clicking an unselected row
-                if (!alreadySelected) rowClick(e, this);
-
-                showCtxMenu(e, listName);
-            };
-            tr.innerHTML =
-                '<td>' + (i+1) + '</td>' +
-                '<td><b>' + escHtml(r.number) + '</b></td>' +
-                '<td>' + escHtml(r.calledAt) + '</td>' +
-                '<td class="' + cls + '">' + label + '</td>';
-            tb.appendChild(tr);
-        }
+function renderHistory() {
+    var tb = document.getElementById('tbody-history');
+    while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
+    for (var i = 0; i < history.length; i++) {
+        var r     = history[i];
+        var cls   = r.status === 'served'     ? 'result-served'
+                  : r.status === 'not_served' ? 'result-notserved'
+                  : r.status === 'not_come'   ? 'result-missed' : '';
+        var label = r.status === 'served'     ? 'served'
+                  : r.status === 'not_served' ? 'not served'
+                  : r.status === 'not_come'   ? 'missed' : r.status;
+        var tr = tb.insertRow(-1);
+        if (r.selected) tr.className = 'selected';
+        tr.setAttribute('data-id',   r.id);
+        tr.setAttribute('data-list', 'history');
+        tr.onclick       = function(e) { rowClick(e, this); };
+        tr.oncontextmenu = function(e) {
+            var id = this.getAttribute('data-id');
+            var listName = this.getAttribute('data-list');
+            var data = listName === 'queue' ? queue : history;
+            var alreadySelected = false;
+            for (var k = 0; k < data.length; k++) {
+                if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+            }
+            if (!alreadySelected) rowClick(e, this);
+            showCtxMenu(e, listName);
+        };
+        var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
+        var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
+        var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
+        var c3 = tr.insertCell(3); c3.innerHTML = escHtml(label);
+        c3.className = cls;
     }
-    
+}
+
     // ── Row selection — now uses data-id instead of data-idx ──────────────
     function rowClick(e, tr) {
         var listName = tr.getAttribute('data-list');
@@ -621,9 +614,11 @@
             sel.innerHTML = '';
             for (var i = 0; i < list.length; i++) {
                 var item = list[i];
+                var val  = String(item.id || item.slug || i);
+                var name = item.title || item.name || item.display_name || val;
                 var opt  = document.createElement('option');
-                opt.value = String(item.id || item.slug || i);
-                opt.text  = item.title || item.name || item.display_name || opt.value;
+                opt.value = val;
+                opt.innerHTML = escHtml(name); // ← was opt.text
                 sel.appendChild(opt);
             }
         } catch(e) {
