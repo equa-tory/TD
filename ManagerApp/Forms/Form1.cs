@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Media;
+using System.Diagnostics;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Drawing.Printing;
@@ -149,6 +150,11 @@ namespace Tokenizer
                 return sb.ToString();
             }
             catch (Exception ex) { return "[]"; }
+        }
+
+        public void OpenSkins()
+        {
+            Process.Start("explorer.exe", Application.StartupPath + @"\Audio\");
         }
 
         public string PrintTicket(string id, string title)

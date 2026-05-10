@@ -97,7 +97,7 @@
         /* ── List ── */
         #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: row; }
         /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
-        .tab-list { display: none; overflow-y: auto; }
+        .tab-list { display: none; flex: 1; overflow-y: auto; }
         .tab-list.active { display: block; }
 
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -187,12 +187,16 @@
         
         <label>Принтер:</label>
         <select id="printer"><option value="">— Без принтера —</option></select>
+        
+        <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
+        <button class="btn" onclick="toggleDebug()" id="debugBtn">Превью печати: ...</button>
 
+        <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
         <label>Голос:</label>
         <select id="voiceSkin">
             <option value="Default">Стандарт</option>
             <option value="Danil">Данил</option>
-        </select>
+        </select>    
 
         <label>Гонг:</label>
         <select id="gongSkin">
@@ -203,11 +207,10 @@
             <option value="fnaf">FNAF</option>
             <option value="gong1">гонг1</option>
             <option value="gong2">гонг2</option>
-        </select>
+        </select>    
         
-        <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
-        <button class="btn" onclick="toggleDebug()" id="debugBtn">Превью печати: ...</button>
-
+        <button class="btn" onclick="(window.external.OpenSkins())" id="openSkinsBtn">Открыть звуки</button>
+        
         <!-- Login sound toggle -->
         <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="loginSound" />
