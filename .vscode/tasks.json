@@ -26,7 +26,7 @@
     {
       "label": "Run Buttons App",
       "type": "shell",
-      "command": "${workspaceFolder}\\bin\\Debug\\Buttons.exe",
+      "command": "taskkill /IM Buttons.exe /F ;& ${workspaceFolder}\\bin\\Debug\\Buttons.exe",
       "dependsOn": "Build Buttons App",
       "problemMatcher": [],
       "group": { "kind": "build" },
@@ -34,7 +34,7 @@
     {
       "label": "Run Manager App",
       "type": "shell",
-      "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe",
+      "command": "taskkill /IM Manager.exe /F ;& ${workspaceFolder}\\bin\\Debug\\Manager.exe",
       "dependsOn": "Build Manager App",
       "problemMatcher": [],
       "group": { "kind": "build", },
@@ -42,7 +42,7 @@
     {
       "label": "Run All",
       "type": "shell",
-      "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe ;& ${workspaceFolder}\\bin\\Debug\\Buttons.exe",
+      "command": "taskkill /IM Manager.exe /F ;& taskkill /IM Buttons.exe /F ;& ${workspaceFolder}\\bin\\Debug\\Manager.exe ;& ${workspaceFolder}\\bin\\Debug\\Buttons.exe",
       "dependsOn": "Build All",
       "problemMatcher": [],
       "group": { "kind": "build", },

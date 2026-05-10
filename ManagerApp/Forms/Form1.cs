@@ -50,30 +50,44 @@ namespace Tokenizer
         }
 
         // System.Media.SystemSounds.Exclamation.Play();
+        public void SetVolume(string percent)
+        {
+            try
+            {
+                int v;
+                if (int.TryParse(percent, out v))
+                    AudioManager.SetVolume(v);
+                Config.Set("volume", percent);
+            }
+            catch { }
+        }
+
+        public string GetVolume()
+        {
+            return Config.Get("volume") ?? "50";
+        }
+
         public void Gong(string ticketNumber)
         {
             System.Threading.ThreadPool.QueueUserWorkItem(delegate(object state)
             {
                 try
                 {
+                    // apply saved volume before playing
+                    int v;
+                    if (int.TryParse(Config.Get("volume"), out v))
+                        AudioManager.SetVolume(v);
+
                     string dir = Application.StartupPath + @"\Audio\";
+                    AudioManager.PlaySync(dir + "welcome.wav");
 
-                    // play welcome.wav first
-                    PlaySync(dir + "welcome.wav");
-
-                    // extract only digits from ticket number (e.g. "А-042" → "042")
                     foreach (char c in ticketNumber)
-                    {
                         if (c >= '0' && c <= '9')
-                        {
-                            PlaySync(dir + c + ".wav");
-                        }
-                    }
+                            AudioManager.PlaySync(dir + c + ".wav");
                 }
                 catch { }
             });
-        }
-        private void PlaySync(string path)
+        }        private void PlaySync(string path)
         {
             if (!System.IO.File.Exists(path)) return;
             using (SoundPlayer player = new SoundPlayer(path))
@@ -158,6 +172,63 @@ namespace Tokenizer
             browser.ObjectForScripting = new ScriptManager();
             browser.Url = new Uri("file:///" + Application.StartupPath + @"\Pages\manager.html");
             RestorePosition();
+
+            StartConfig();
+        }
+
+
+
+        private void StartConfig() {
+            // api ip
+            string apiUrl = Config.Get("apiUrl");
+            if (string.IsNullOrEmpty(apiUrl))
+            {
+                Config.Set("apiUrl", "http://192.168..:9009");
+            }
+
+            // start sound
+            string loginSound = Config.Get("loginSound");
+            if (string.IsNullOrEmpty(loginSound))
+            {
+                Config.Set("loginSound", "True");
+                loginSound = "True";
+            }
+            if (loginSound == "True")
+            {
+                PlayLoginSound();
+            }
+
+            // volume
+            string volume = Config.Get("volume");
+            if (string.IsNullOrEmpty(volume))
+            {
+                Config.Set("volume", "50");
+            }
+
+            // refresh rate
+            string refreshRate = Config.Get("refreshRate");
+            if (string.IsNullOrEmpty(refreshRate))
+            {
+                Config.Set("refreshRate", "3000");
+            }
+        }
+
+        private void PlayLoginSound()
+        {
+            if (Config.Get("loginSound") != "True") return;
+            System.Threading.ThreadPool.QueueUserWorkItem(delegate(object state)
+            {
+                try
+                {
+                    int v;
+                    if (int.TryParse(Config.Get("volume"), out v))
+                        AudioManager.SetVolume(v);
+
+                    string dir = Application.StartupPath + @"\Audio\";
+                    AudioManager.PlaySync(dir + "accept.wav");
+                }
+                catch { }
+            });
         }
 
         private void RestorePosition()

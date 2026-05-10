@@ -161,14 +161,46 @@
 <div id="page-config" class="page">
     <div class="form-page">
         <h3 style="margin-bottom:8px;">Config</h3>
+        
+        
+
         <label>API URL:</label>
         <input type="text" id="apiUrl" placeholder="http://example.com/api" />
+        
         <label>Ticket refresh rate:</label>
         <input type="text" id="refreshRate" placeholder="3000" />
+        
         <label>Printer:</label>
         <select id="printer"><option value="">— No printer —</option></select>
+        
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
         <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
+
+        <!-- Login sound toggle -->
+        <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="loginSound" />
+            Enable login sound
+        </label>
+
+        <!-- Volume slider -->
+        <label for="volume" style="margin-top:12px;">
+            Sound volume:
+        </label>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+            <input
+                type="range"
+                id="volume"
+                min="0"
+                max="100"
+                value="50"
+                style="flex:1;"
+            />
+            <span id="volumeValue">0-100</span>
+        </div>
+
+
+        
         <br />
         <button class="btn" onclick="saveConfig()">Save</button>
         <button class="btn" onclick="loadCurrent()">Reload</button>
@@ -183,7 +215,7 @@
         <label>Ticket Type:</label>
         <select id="ticketType"><option value="">— loading... —</option></select>
         <label>Count:</label>
-        <input type="number" id="count" value="1" min="1" max="100" style="width:100px;" />
+        <input type="number" id="count" value="10" min="1" max="100" style="width:100px;" />
         <br />
         <button class="btn" onclick="createBatch()">Create Tickets</button>
         <div id="batchStatus" class="status"></div>
@@ -199,6 +231,7 @@
     var refreshTimer = null;
     var REFRESH_MS   = 3000; // poll every 3 seconds
     var servingTicket = null; // { id, number, calledAt }
+
     
     function loadTickets() {
         var dbgEl = document.getElementById('printerDebug'); // reuse as debug output temporarily
@@ -624,15 +657,21 @@ function renderHistory() {
         window.external.SaveConfig('apiUrl',  document.getElementById('apiUrl').value);
         window.external.SaveConfig('printer', document.getElementById('printer').value);
         window.external.SaveConfig('refreshRate', document.getElementById('refreshRate').value);
+        window.external.SaveConfig('loginSound', document.getElementById('loginSound').checked);
+        window.external.SaveConfig('volume', document.getElementById('volume').value);
+        window.external.SetVolume(document.getElementById('volume').value);
         var s = document.getElementById('status');
         s.style.display = 'block';
         setTimeout(function() { s.style.display = 'none'; }, 2000);
     }
 
-    function loadCurrent() {
+    function loadCurrent() { // TODO: add others
         document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
-        document.getElementById('refreshRate').value = window.external.GetConfig('refreshRate');
         fillPrinters(window.external.GetConfig('printer'));
+        document.getElementById('refreshRate').value = window.external.GetConfig('refreshRate');
+        document.getElementById('loginSound').checked = window.external.GetConfig('loginSound') === 'True';
+        document.getElementById('volume').value = window.external.GetConfig('volume');
+        document.getElementById('volume').value = window.external.GetVolume();
         var dbgVal = window.external.GetConfig('printDebug');
         document.getElementById('debugBtn').innerText = 'Debug Print: ' + (dbgVal || 'false');
     }
