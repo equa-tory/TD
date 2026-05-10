@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
+        body { -ms-user-select: none; user-select: none; font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
 
         #menubar { background: #2c2c2c; flex-shrink: 0; }
         #menubar button { background: none; border: none; color: #fff; padding: 8px 16px; font-size: 13px; cursor: pointer; }
@@ -142,7 +142,7 @@
     <div id="list-area">
         <div class="tab-list active" id="list-queue">
             <table>
-                <thead><tr><th>#</th><th>Number</th><th>Called at</th><th>Status</th></tr></thead>
+                <thead><tr><th>#</th><th>Number</th><th>Booked at</th><th>Status</th></tr></thead>
                 <tbody id="tbody-queue"></tbody>
             </table>
         </div>
@@ -172,6 +172,23 @@
         
         <label>Printer:</label>
         <select id="printer"><option value="">— No printer —</option></select>
+
+        <label>Voice skin:</label>
+        <select id="voiceSkin">
+            <option value="Default">Default</option>
+            <option value="Danil">Danil</option>
+        </select>
+
+        <label>Gong skin:</label>
+        <select id="gongSkin">
+            <option value="rjd">RJD</option>
+            <option value="announcement1">Announcement 1</option>
+            <option value="announcement2">Announcement 2</option>
+            <option value="chinese">Chinese</option>
+            <option value="fnaf">FNAF</option>
+            <option value="gong1">gong1</option>
+            <option value="gong2">gong2</option>
+        </select>
         
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
         <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
@@ -231,6 +248,7 @@
     var refreshTimer = null;
     var REFRESH_MS   = 3000; // poll every 3 seconds
     var servingTicket = null; // { id, number, calledAt }
+    var elapsedTimer = null;
 
     
     function loadTickets() {
@@ -258,7 +276,14 @@
                     selected: false
                 };
                 if (status === 'serving') {
-                    newServing = entry;
+                    newServing = {
+                        id:      String(t.id || i),
+                        number:  t.name || t.number || t.display_number || ('T-' + i),
+                        calledAt: t.created_at ? formatDate(t.created_at) : '',
+                        rawDate:  t.created_at || '',  // ← full ISO for elapsed calc
+                        status:  status,
+                        selected: false
+                    };
                 } else if (status === 'active') {
                     entry.selected = isSelected('queue', entry.id);
                     newQueue.push(entry);
@@ -290,12 +315,24 @@
         if (!servingTicket) {
             el.innerHTML = '';
             el.style.display = 'none';
+            if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
             return;
         }
         el.style.display = 'block';
+        updateServingDisplay();
+
+        // tick every second independently of loadTickets
+        if (!elapsedTimer) {
+            elapsedTimer = setInterval(updateServingDisplay, 1000);
+        }
+    }
+    function updateServingDisplay() {
+        var el = document.getElementById('currentTicket');
+        if (!el || !servingTicket) return;
         el.innerHTML =
             '<span style="font-weight:bold;font-size:15px;">' + escHtml(servingTicket.number) + '</span>' +
-            '<span style="color:#888;font-size:12px;margin-left:10px;">serving since ' + escHtml(servingTicket.calledAt) + '</span>';
+            '<span style="color:#555;font-size:12px;margin-left:10px;">' + escHtml(servingTicket.calledAt) + '</span>' +
+            '<span style="color:#888;font-size:12px;margin-left:10px;">(' + escHtml(getElapsed(servingTicket.rawDate)) + ')</span>';
     }
 
     function updateButtons() {
@@ -306,7 +343,7 @@
         document.getElementById('ab-served').disabled     = !hasServing;
         document.getElementById('ab-notserved').disabled  = !hasServing;
         document.getElementById('ab-missed').disabled     = !hasServing;
-        document.getElementById('ab-gong').disabled       = !hasServing;
+        // document.getElementById('ab-gong').disabled       = !hasServing;
     }
     
     // ── Navigation ─────────────────────────────────────────────────────────
@@ -357,36 +394,36 @@
     }
 
     // ── Queue rendering ────────────────────────────────────────────────────
-function renderQueue() {
-    var tb = document.getElementById('tbody-queue');
-    while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
-    for (var i = 0; i < queue.length; i++) {
-        var r  = queue[i];
-        var tr = tb.insertRow(-1);
-        if (r.selected) tr.className = 'selected';
-        tr.setAttribute('data-id',   r.id);
-        tr.setAttribute('data-list', 'queue');
-        tr.onclick       = function(e) { rowClick(e, this); };
-        tr.oncontextmenu = function(e) {
-            var id = this.getAttribute('data-id');
-            var listName = this.getAttribute('data-list');
-            var data = listName === 'queue' ? queue : history;
-            var alreadySelected = false;
-            for (var k = 0; k < data.length; k++) {
-                if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
-            }
-            if (!alreadySelected) rowClick(e, this);
-            showCtxMenu(e, listName);
-        };
-        var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
-        var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
-        var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
-        var c3 = tr.insertCell(3); c3.innerHTML = 'waiting';
-        c3.className = 'result-pending';
+    function renderQueue() {
+        var tb = document.getElementById('tbody-queue');
+        while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
+        for (var i = 0; i < queue.length; i++) {
+            var r  = queue[i];
+            var tr = tb.insertRow(-1);
+            if (r.selected) tr.className = 'selected';
+            tr.setAttribute('data-id',   r.id);
+            tr.setAttribute('data-list', 'queue');
+            tr.onclick       = function(e) { rowClick(e, this); };
+            tr.oncontextmenu = function(e) {
+                var id = this.getAttribute('data-id');
+                var listName = this.getAttribute('data-list');
+                var data = listName === 'queue' ? queue : history;
+                var alreadySelected = false;
+                for (var k = 0; k < data.length; k++) {
+                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+                }
+                if (!alreadySelected) rowClick(e, this);
+                showCtxMenu(e, listName);
+            };
+            var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
+            var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
+            var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
+            var c3 = tr.insertCell(3); c3.innerHTML = 'waiting';
+            c3.className = 'result-pending';
+        }
     }
-}
 
-function renderHistory() {
+    function renderHistory() {
     var tb = document.getElementById('tbody-history');
     while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
     
@@ -663,6 +700,8 @@ function renderHistory() {
         window.external.SaveConfig('refreshRate', document.getElementById('refreshRate').value);
         window.external.SaveConfig('loginSound', document.getElementById('loginSound').checked);
         window.external.SaveConfig('volume', document.getElementById('volume').value);
+        window.external.SaveConfig('voiceSkin', document.getElementById('voiceSkin').value);
+        window.external.SaveConfig('gongSkin', document.getElementById('gongSkin').value);
         window.external.SetVolume(document.getElementById('volume').value);
         var s = document.getElementById('status');
         s.style.display = 'block';
@@ -674,8 +713,9 @@ function renderHistory() {
         fillPrinters(window.external.GetConfig('printer'));
         document.getElementById('refreshRate').value = window.external.GetConfig('refreshRate');
         document.getElementById('loginSound').checked = window.external.GetConfig('loginSound') === 'True';
+        document.getElementById('voiceSkin').value = window.external.GetConfig('voiceSkin');
         document.getElementById('volume').value = window.external.GetConfig('volume');
-        document.getElementById('volume').value = window.external.GetVolume();
+        document.getElementById('gongSkin').value = window.external.GetConfig('gongSkin');
         var dbgVal = window.external.GetConfig('printDebug');
         document.getElementById('debugBtn').innerText = 'Debug Print: ' + (dbgVal || 'false');
     }
@@ -733,23 +773,46 @@ function renderHistory() {
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+    function getElapsed(startIso) { // TODO: FIX FOR XP
+        try {
+            var start = new Date(startIso.replace(' ', 'T'));
+            var diff  = Math.floor((new Date() - start) / 1000);
+            if (diff < 0) diff = 0;
+            var h = Math.floor(diff / 3600);
+            var m = Math.floor((diff % 3600) / 60);
+            var s = diff % 60;
+            return (h > 0 ? h + 'h ' : '') +
+                (m < 10 ? '0' : '') + m + 'm ' +
+                (s < 10 ? '0' : '') + s + 's';
+        } catch(e) { return ''; }
+    }
+    function formatDate(iso) {
+        try {
+            // "2026-05-07T21:14:24.761837" → "07.05 21:14"
+            var parts = iso.split('T');
+            var datePart = parts[0]; // "2026-05-07"
+            var timePart = parts.length > 1 ? parts[1].substring(0, 5) : ''; // "21:14"
+            var d = datePart.split('-');
+            return d[2] + '/' + d[1] + ' — ' + timePart;
+        } catch(e) { return iso; }
+    }
     function now() {
         var d = new Date();
         return d.getHours() + ':' +
-               (d.getMinutes() < 10 ? '0' : '') + d.getMinutes() + ':' +
-               (d.getSeconds() < 10 ? '0' : '') + d.getSeconds();
+               (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+            // + ':' + (d.getSeconds() < 10 ? '0' : '') + d.getSeconds();
     }
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
-    function formatDate(iso) {
-        try {
-            // "2026-05-07T21:14:24.761837" → "21:14:24"
-            var t = iso.split('T');
-            if (t.length > 1) return t[1].substring(0, 8);
-            return iso;
-        } catch(e) { return iso; }
-    }
+    // function formatDate(iso) {
+    //     try {
+    //         // "2026-05-07T21:14:24.761837" → "21:14:24"
+    //         var t = iso.split('T');
+    //         if (t.length > 1) return t[1].substring(0, 8);
+    //         return iso;
+    //     } catch(e) { return iso; }
+    // }
 
     // ── Init ───────────────────────────────────────────────────────────────
     // renderQueue();

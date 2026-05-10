@@ -69,6 +69,15 @@ namespace Tokenizer.Shared
         // Specific endpoints
         // ----------------------------------------------------------------
 
+        // UPDATE TIME \/
+        public static string UpdateTime(string ticketId, string new_time)
+        {
+            Dictionary<string, string> p = new Dictionary<string, string>();
+            p.Add("id", ticketId.ToString());
+            p.Add("created_at", new_time.ToString());
+            return Post("/ticket/", p);
+        }
+
         // BOOK \/
         public static string CreateTicket(int ticketTypeId)
         {

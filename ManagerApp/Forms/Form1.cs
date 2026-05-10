@@ -78,12 +78,20 @@ namespace Tokenizer
                     if (int.TryParse(Config.Get("volume"), out v))
                         AudioManager.SetVolume(v);
 
-                    string dir = Application.StartupPath + @"\Audio\";
-                    AudioManager.PlaySync(dir + "welcome.wav");
+                    if (ticketNumber == "" || ticketNumber == null || ticketNumber == "null" || ticketNumber == "undefined" || ticketNumber == "undefined") {
+                        string dir = Application.StartupPath + @"\Audio\Gongs\";
+                        AudioManager.PlaySync(dir + Config.Get("gongSkin") + ".wav");
+                    }
+                    else {
+                        string voiceSkin = Config.Get("voiceSkin");
+                        if (string.IsNullOrEmpty(voiceSkin)) voiceSkin = "Default";
+                        string dir = Application.StartupPath + @"\Audio\" + voiceSkin + @"\";
+                        AudioManager.PlaySync(dir + "welcome.wav");
 
-                    foreach (char c in ticketNumber)
-                        if (c >= '0' && c <= '9')
-                            AudioManager.PlaySync(dir + c + ".wav");
+                        foreach (char c in ticketNumber)
+                            if (c >= '0' && c <= '9')
+                                AudioManager.PlaySync(dir + c + ".wav");
+                    }
                 }
                 catch { }
             });
@@ -118,7 +126,6 @@ namespace Tokenizer
                 return "error:" + ex.GetType().Name + ": " + ex.Message;
             }
         }
-
 
         public string GetTickets()
         {
@@ -186,6 +193,20 @@ namespace Tokenizer
                 Config.Set("apiUrl", "http://192.168..:9009");
             }
 
+            // Voice skin
+            string voiceSkin = Config.Get("voiceSkin");
+            if (string.IsNullOrEmpty(voiceSkin))
+            {
+                Config.Set("voiceSkin", "Default");
+            }
+
+            // Gong skin
+            string gongSkin = Config.Get("gongSkin");
+            if (string.IsNullOrEmpty(gongSkin))
+            {
+                Config.Set("gongSkin", "rjd");
+            }
+
             // start sound
             string loginSound = Config.Get("loginSound");
             if (string.IsNullOrEmpty(loginSound))
@@ -224,7 +245,7 @@ namespace Tokenizer
                     if (int.TryParse(Config.Get("volume"), out v))
                         AudioManager.SetVolume(v);
 
-                    string dir = Application.StartupPath + @"\Audio\";
+                    string dir = Application.StartupPath + @"\Audio\misc\";
                     AudioManager.PlaySync(dir + "accept.wav");
                 }
                 catch { }
