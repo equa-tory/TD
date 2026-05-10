@@ -7,9 +7,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { -ms-user-select: none; user-select: none; font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
 
-        #menubar { background: #2c2c2c; flex-shrink: 0; }
-        #menubar button { background: none; border: none; color: #fff; padding: 8px 16px; font-size: 13px; cursor: pointer; }
-        #menubar button:hover { background: #444; }
+        /* -- Menu -- */
+        #menubar { background: #2c2c2c; width: 100%; white-space: nowrap; overflow: hidden; }
+        #menubar button {
+            display: inline-block; vertical-align: top;
+            background: none; border: none; color: #fff;
+            padding: 8px 16px; font-size: 13px; cursor: pointer;
+        }
+        #menubar button:hover  { background: #444; }
         #menubar button.active { background: #555; }
 
         .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
@@ -33,6 +38,7 @@
             border-bottom: 1px solid #ddd;
             padding: 8px 12px;
             flex-shrink: 0;
+            width: 100%; white-space: nowrap; overflow: hidden;
         }
         #btn-next {
             background: #0078d4;
@@ -48,7 +54,7 @@
         #btn-next:active { background: #004c85; }
 
         .action-group { display: flex; gap: 6px; }
-        .action-group button {
+        #actionbar button {
             border: 1px solid #bbb;
             background: #f5f5f5;
             padding: 8px 14px;
@@ -56,12 +62,18 @@
             cursor: pointer;
             border-radius: 3px;
         }
-        .action-group button:hover { background: #e5e5e5; }
-        .action-group button.btn-served  { border-color: #107c10; color: #107c10; }
-        .action-group button.btn-notserved { border-color: #d83b01; color: #d83b01; }
-        .action-group button.btn-missed  { border-color: #8764b8; color: #8764b8; }
-        .action-group button.btn-gong    { border-color: #c19c00; color: #986f00; }
-        .action-group button:disabled { opacity: 0.4; cursor: default; }
+        #actionbar button:hover { background: #e5e5e5; }
+        #actionbar button.btn-next  { border-color: #005fa3; color: #005fa3; }
+        #actionbar button.btn-served  { border-color: #107c10; color: #107c10; }
+        #actionbar button.btn-notserved { border-color: #d83b01; color: #d83b01; }
+        #actionbar button.btn-missed  { border-color: #8764b8; color: #8764b8; }
+        #actionbar button.btn-gong    { border-color: #c19c00; color: #986f00; }
+        #actionbar button:disabled { opacity: 0.4; cursor: default; }
+
+        
+        #actionbar button {
+            display: inline-block; vertical-align: top;
+        }
 
         /* ── Tabs ── */
         #tabs-bar {
@@ -69,6 +81,7 @@
             background: #fff;
             border-bottom: 1px solid #ccc;
             flex-shrink: 0;
+            width: 100%; white-space: nowrap; overflow: hidden;
         }
         .tab-btn {
             padding: 8px 20px;
@@ -83,7 +96,8 @@
 
         /* ── List ── */
         #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-        .tab-list { display: none; flex: 1; overflow-y: auto; }
+        /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
+        .tab-list { display: none; overflow-y: auto; }
         .tab-list.active { display: block; }
 
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -100,6 +114,7 @@
         .result-pending   { color: #888; }
 
         #hint { padding: 6px 12px; font-size: 11px; color: #888; background: #fafafa; border-top: 1px solid #eee; flex-shrink: 0; }
+        /* #list-area button { display: inline-block; vertical-align: top;  } TODO: tryign 2nd */
 
         /* ── Config / Batch pages ── */
         .form-page { padding: 16px; overflow-y: auto; flex: 1; }
@@ -125,13 +140,13 @@
     </div>
 
     <div id="actionbar">
-        <button id="btn-next" onclick="callNext()">&#9654; Next</button>
-        <div class="action-group">
-            <button class="btn-served"    onclick="setServingStatus('served')"    id="ab-served">&#10003; Served</button>
-            <button class="btn-notserved" onclick="setServingStatus('not_served')" id="ab-notserved">&#10007; Not served</button>
-            <button class="btn-missed"    onclick="setServingStatus('not_come')"  id="ab-missed">&#9888; Missed</button>
-            <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Gong</button>
-        </div>
+        <button class="btn-next"    id="btn-next" onclick="callNext()">&#9654; Next</button>
+        <button class="btn-served"    onclick="setServingStatus('served')"    id="ab-served">&#10003; Served</button>
+        <button class="btn-notserved" onclick="setServingStatus('not_served')" id="ab-notserved">&#10007; Not served</button>
+        <button class="btn-missed"    onclick="setServingStatus('not_come')"  id="ab-missed">&#9888; Missed</button>
+        <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Gong</button>
+        <!-- <div class="action-group">
+        </div> -->
     </div>
 
     <div id="tabs-bar">
@@ -277,11 +292,13 @@
                 };
                 if (status === 'serving') {
                     newServing = {
-                        id:      String(t.id || i),
-                        number:  t.name || t.number || t.display_number || ('T-' + i),
-                        calledAt: t.created_at ? formatDate(t.created_at) : '',
-                        rawDate:  t.created_at || '',  // ← full ISO for elapsed calc
-                        status:  status,
+                        id:       String(t.id || i),
+                        number:   t.name || t.number || t.display_number || ('T-' + i),
+                        calledAt: t.timestamp  ? formatDate(t.timestamp)   // ← when called
+                                : t.created_at ? formatDate(t.created_at)  // ← fallback
+                                : '',
+                        rawDate:  t.timestamp || t.created_at || '',
+                        status:   status,
                         selected: false
                     };
                 } else if (status === 'active') {
@@ -530,6 +547,8 @@
         ctxTargetList = listName;
 
         var menu = document.getElementById('ctx-menu');
+        var x = e.clientX + (document.documentElement.scrollLeft || document.body.scrollLeft);
+        var y = e.clientY + (document.documentElement.scrollTop  || document.body.scrollTop);
         menu.style.display = 'block';
         menu.style.left = x + 'px';
         menu.style.top  = y + 'px';
@@ -773,10 +792,27 @@
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
-    function getElapsed(startIso) { // TODO: FIX FOR XP
+    function parseIsoDate(iso) {
+        // "2026-05-10T18:03:48.730986" → works in IE8
         try {
-            var start = new Date(startIso.replace(' ', 'T'));
-            var diff  = Math.floor((new Date() - start) / 1000);
+            var s = iso.replace('T', ' ').split(/[- :\.]/);
+            return new Date(
+                parseInt(s[0], 10),      // year
+                parseInt(s[1], 10) - 1,  // month (0-based)
+                parseInt(s[2], 10),      // day
+                parseInt(s[3], 10),      // hour
+                parseInt(s[4], 10),      // min
+                parseInt(s[5], 10)       // sec
+            );
+        } catch(e) { return null; }
+    }
+
+    function getElapsed(startIso) {
+        try {
+            if (!startIso) return '';
+            var start = parseIsoDate(startIso);
+            if (!start || isNaN(start.getTime())) return '';
+            var diff = Math.floor((new Date() - start) / 1000);
             if (diff < 0) diff = 0;
             var h = Math.floor(diff / 3600);
             var m = Math.floor((diff % 3600) / 60);
@@ -786,14 +822,18 @@
                 (s < 10 ? '0' : '') + s + 's';
         } catch(e) { return ''; }
     }
+
     function formatDate(iso) {
         try {
-            // "2026-05-07T21:14:24.761837" → "07.05 21:14"
-            var parts = iso.split('T');
-            var datePart = parts[0]; // "2026-05-07"
-            var timePart = parts.length > 1 ? parts[1].substring(0, 5) : ''; // "21:14"
-            var d = datePart.split('-');
-            return d[2] + '/' + d[1] + ' — ' + timePart;
+            var d = parseIsoDate(iso);
+            if (!d || isNaN(d.getTime())) return iso;
+            var day  = d.getDate();
+            var mon  = d.getMonth() + 1;
+            var h    = d.getHours();
+            var m    = d.getMinutes();
+            return (day < 10 ? '0' : '') + day + '.' +
+                (mon < 10 ? '0' : '') + mon + ' ' +
+                h + ':' + (m < 10 ? '0' : '') + m;
         } catch(e) { return iso; }
     }
     function now() {
@@ -821,7 +861,7 @@
 </script>
 
 <div id="ctx-menu" style="
-    display:none; position:fixed; background:#fff;
+    display:none; position:absolute; background:#fff;
     border:1px solid #bbb; border-radius:3px;
     box-shadow:2px 2px 6px rgba(0,0,0,0.2);
     z-index:999; min-width:160px; font-size:13px;">

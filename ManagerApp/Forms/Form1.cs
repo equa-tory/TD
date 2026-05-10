@@ -159,6 +159,8 @@ namespace Tokenizer
                     new System.Collections.Generic.Dictionary<string, string>();
                 p.Add("id", id);
                 p.Add("status", status);
+                // 2026-05-10T17:09:03.218261
+                p.Add("timestamp", DateTime.Now.ToString("yyyy-MM-ddTHH:mm:ss.fffffff"));
                 return ApiManager.Post("/ticket/", p);
             }
             catch (Exception ex) { return "error:" + ex.Message; }
