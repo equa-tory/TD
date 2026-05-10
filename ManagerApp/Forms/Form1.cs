@@ -73,35 +73,82 @@ namespace Tokenizer
             {
                 try
                 {
-                    // apply saved volume before playing
                     int v;
                     if (int.TryParse(Config.Get("volume"), out v))
                         AudioManager.SetVolume(v);
 
-                    if (ticketNumber == "" || ticketNumber == null || ticketNumber == "null" || ticketNumber == "undefined" || ticketNumber == "undefined") {
-                        string dir = Application.StartupPath + @"\Audio\Gongs\";
-                        AudioManager.PlaySync(dir + Config.Get("gongSkin") + ".wav");
-                    }
-                    else {
-                        string voiceSkin = Config.Get("voiceSkin");
-                        if (string.IsNullOrEmpty(voiceSkin)) voiceSkin = "Default";
-                        string dir = Application.StartupPath + @"\Audio\" + voiceSkin + @"\";
-                        AudioManager.PlaySync(dir + "welcome.wav");
+                    string voiceSkin = Config.Get("voiceSkin") ?? "Default";
+                    string gongSkin  = Config.Get("gongSkin")  ?? "";
+                    string voiceDir  = Application.StartupPath + @"\Audio\Voices\" + voiceSkin + @"\";
+                    string gongDir   = Application.StartupPath + @"\Audio\Gongs\";
 
+                    if (ticketNumber == "" || ticketNumber == null || ticketNumber == "null" || ticketNumber == "undefined" || ticketNumber == "undefined") {
+                        // play gong first if set
+                        if (!string.IsNullOrEmpty(gongSkin))
+                            AudioManager.PlaySync(gongDir + gongSkin + ".wav");
+                    } else {
+                        // then announce number
+                        AudioManager.PlaySync(voiceDir + "welcome.wav");
                         foreach (char c in ticketNumber)
                             if (c >= '0' && c <= '9')
-                                AudioManager.PlaySync(dir + c + ".wav");
+                                AudioManager.PlaySync(voiceDir + c + ".wav");
                     }
                 }
                 catch { }
             });
-        }        private void PlaySync(string path)
+        }        
+        
+        private void PlaySync(string path)
         {
             if (!System.IO.File.Exists(path)) return;
             using (SoundPlayer player = new SoundPlayer(path))
             {
                 player.PlaySync(); // blocks until file finishes
             }
+        }
+
+        public string GetVoiceSkins()
+        {
+            try
+            {
+                string dir = Application.StartupPath + @"\Audio\Voices\";
+                if (!System.IO.Directory.Exists(dir)) return "[]";
+                string[] folders = System.IO.Directory.GetDirectories(dir);
+                System.Text.StringBuilder sb = new System.Text.StringBuilder("[");
+                bool first = true;
+                foreach (string folder in folders)
+                {
+                    string name = System.IO.Path.GetFileName(folder);
+                    if (!first) sb.Append(",");
+                    sb.Append("\"" + name.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+                    first = false;
+                }
+                sb.Append("]");
+                return sb.ToString();
+            }
+            catch (Exception ex) { return "[]"; }
+        }
+
+        public string GetGongSkins()
+        {
+            try
+            {
+                string dir = Application.StartupPath + @"\Audio\Gongs\";
+                if (!System.IO.Directory.Exists(dir)) return "[]";
+                string[] files = System.IO.Directory.GetFiles(dir, "*.wav");
+                System.Text.StringBuilder sb = new System.Text.StringBuilder("[");
+                bool first = true;
+                foreach (string file in files)
+                {
+                    string name = System.IO.Path.GetFileNameWithoutExtension(file);
+                    if (!first) sb.Append(",");
+                    sb.Append("\"" + name.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"");
+                    first = false;
+                }
+                sb.Append("]");
+                return sb.ToString();
+            }
+            catch (Exception ex) { return "[]"; }
         }
 
         public string PrintTicket(string id, string title)

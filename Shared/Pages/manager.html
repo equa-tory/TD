@@ -57,7 +57,7 @@
         #actionbar button {
             border: 1px solid #bbb;
             background: #f5f5f5;
-            padding: 8px 14px;
+            padding: 8px 0px;
             font-size: 13px;
             cursor: pointer;
             border-radius: 3px;
@@ -81,7 +81,7 @@
             background: #fff;
             border-bottom: 1px solid #ccc;
             flex-shrink: 0;
-            width: 100%; white-space: nowrap; overflow: hidden;
+            /* width: 100%; white-space: nowrap; overflow: hidden; */
         }
         .tab-btn {
             padding: 8px 20px;
@@ -95,7 +95,7 @@
         .tab-btn.active { border-bottom-color: #0078d4; color: #0078d4; font-weight: bold; }
 
         /* ── List ── */
-        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: row; }
         /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
         .tab-list { display: none; overflow-y: auto; }
         .tab-list.active { display: block; }
@@ -127,9 +127,9 @@
 <body>
 
 <div id="menubar">
-    <button onclick="showPage('manager')" class="active" id="nav-manager">Manager</button>
-    <button onclick="showPage('config')" id="nav-config">Config</button>
-    <button onclick="showPage('batch')"  id="nav-batch">Batch Tickets</button>
+    <button onclick="showPage('manager')" class="active" id="nav-manager">Менеджер</button>
+    <button onclick="showPage('config')" id="nav-config">Настроики</button>
+    <button onclick="showPage('batch')"  id="nav-batch">Батч</button>
 </div>
 
 <!-- ══ Manager page ══════════════════════════════════════════════════════ -->
@@ -140,30 +140,30 @@
     </div>
 
     <div id="actionbar">
-        <button class="btn-next"    id="btn-next" onclick="callNext()">&#9654; Next</button>
-        <button class="btn-served"    onclick="setServingStatus('served')"    id="ab-served">&#10003; Served</button>
-        <button class="btn-notserved" onclick="setServingStatus('not_served')" id="ab-notserved">&#10007; Not served</button>
-        <button class="btn-missed"    onclick="setServingStatus('not_come')"  id="ab-missed">&#9888; Missed</button>
-        <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Gong</button>
+        <button class="btn-next"    id="btn-next" onclick="callNext()">> Следующии</button>
+        <button class="btn-served"    onclick="setServingStatus('served')"    id="ab-served">+ Обслужен</button>
+        <button class="btn-notserved" onclick="setServingStatus('not_served')" id="ab-notserved">- Не обслужен</button>
+        <button class="btn-missed"    onclick="setServingStatus('not_come')"  id="ab-missed">X Не пришёл</button>
+        <button class="btn-gong"      onclick="gong()"                    id="ab-gong">&#9679; Гонг</button>
         <!-- <div class="action-group">
         </div> -->
     </div>
 
     <div id="tabs-bar">
-        <button class="tab-btn active" onclick="showTab('queue')"   id="tab-queue">Queue</button>
-        <button class="tab-btn"        onclick="showTab('history')" id="tab-history">History</button>
+        <button class="tab-btn active" onclick="showTab('queue')"   id="tab-queue">Очередь</button>
+        <button class="tab-btn"        onclick="showTab('history')" id="tab-history">История</button>
     </div>
 
     <div id="list-area">
         <div class="tab-list active" id="list-queue">
             <table>
-                <thead><tr><th>#</th><th>Number</th><th>Booked at</th><th>Status</th></tr></thead>
+                <thead><tr><th>#</th><th>Номер</th><th>Создан в</th><th>Статус</th></tr></thead>
                 <tbody id="tbody-queue"></tbody>
             </table>
         </div>
         <div class="tab-list" id="list-history">
             <table>
-                <thead><tr><th>#</th><th>Number</th><th>Called at</th><th>Result</th></tr></thead>
+                <thead><tr><th>#</th><th>Номер</th><th>Вызван в</th><th>Результат</th></tr></thead>
                 <tbody id="tbody-history"></tbody>
             </table>
         </div>
@@ -175,48 +175,48 @@
 <!-- ══ Config page ═══════════════════════════════════════════════════════ -->
 <div id="page-config" class="page">
     <div class="form-page">
-        <h3 style="margin-bottom:8px;">Config</h3>
+        <h3 style="margin-bottom:8px;">Конфиг</h3>
         
         
 
-        <label>API URL:</label>
+        <label>Сслыка на API:</label>
         <input type="text" id="apiUrl" placeholder="http://example.com/api" />
         
-        <label>Ticket refresh rate:</label>
+        <label>Частота Обновления билетов (мс):</label>
         <input type="text" id="refreshRate" placeholder="3000" />
         
-        <label>Printer:</label>
-        <select id="printer"><option value="">— No printer —</option></select>
+        <label>Принтер:</label>
+        <select id="printer"><option value="">— Без принтера —</option></select>
 
-        <label>Voice skin:</label>
+        <label>Голос:</label>
         <select id="voiceSkin">
-            <option value="Default">Default</option>
-            <option value="Danil">Danil</option>
+            <option value="Default">Стандарт</option>
+            <option value="Danil">Данил</option>
         </select>
 
-        <label>Gong skin:</label>
+        <label>Гонг:</label>
         <select id="gongSkin">
-            <option value="rjd">RJD</option>
-            <option value="announcement1">Announcement 1</option>
-            <option value="announcement2">Announcement 2</option>
-            <option value="chinese">Chinese</option>
+            <option value="rjd">РЖД</option>
+            <option value="announcement1">Уведомление 1</option>
+            <option value="announcement2">Уведомление 2</option>
+            <option value="chinese">Китай</option>
             <option value="fnaf">FNAF</option>
-            <option value="gong1">gong1</option>
-            <option value="gong2">gong2</option>
+            <option value="gong1">гонг1</option>
+            <option value="gong2">гонг2</option>
         </select>
         
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
-        <button class="btn" onclick="toggleDebug()" id="debugBtn">Debug Print: ...</button>
+        <button class="btn" onclick="toggleDebug()" id="debugBtn">Превью печати: ...</button>
 
         <!-- Login sound toggle -->
         <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="loginSound" />
-            Enable login sound
+            Звук при запуске
         </label>
 
         <!-- Volume slider -->
         <label for="volume" style="margin-top:12px;">
-            Sound volume:
+            Громкость звуков:
         </label>
 
         <div style="display:flex;align-items:center;gap:10px;">
@@ -234,22 +234,22 @@
 
         
         <br />
-        <button class="btn" onclick="saveConfig()">Save</button>
-        <button class="btn" onclick="loadCurrent()">Reload</button>
-        <div class="status" id="status">Saved!</div>
+        <button class="btn" onclick="saveConfig()">Сохранить</button>
+        <button class="btn" onclick="loadCurrent()">Перезагрузить</button>
+        <div class="status" id="status">Сохранено!</div>
     </div>
 </div>
 
 <!-- ══ Batch page ════════════════════════════════════════════════════════ -->
 <div id="page-batch" class="page">
     <div class="form-page">
-        <h3 style="margin-bottom:8px;">Batch Tickets</h3>
-        <label>Ticket Type:</label>
-        <select id="ticketType"><option value="">— loading... —</option></select>
-        <label>Count:</label>
+        <h3 style="margin-bottom:8px;">Создать батч</h3>
+        <label>Тип билета:</label>
+        <select id="ticketType"><option value="">— загрузка... —</option></select>
+        <label>Количество:</label>
         <input type="number" id="count" value="10" min="1" max="100" style="width:100px;" />
         <br />
-        <button class="btn" onclick="createBatch()">Create Tickets</button>
+        <button class="btn" onclick="createBatch()">Создать</button>
         <div id="batchStatus" class="status"></div>
     </div>
 </div>
@@ -435,49 +435,49 @@
             var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
             var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
             var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
-            var c3 = tr.insertCell(3); c3.innerHTML = 'waiting';
+            var c3 = tr.insertCell(3); c3.innerHTML = 'в очереди';
             c3.className = 'result-pending';
         }
     }
 
     function renderHistory() {
-    var tb = document.getElementById('tbody-history');
-    while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
-    
-    var data = history.slice().reverse();
-    for (var i = 0; i < data.length; i++) {
-        var r = data[i];
-    // for (var i = 0; i < history.length; i++) {
-        // var r     = history[i];
-        var cls   = r.status === 'served'     ? 'result-served'
-                  : r.status === 'not_served' ? 'result-notserved'
-                  : r.status === 'not_come'   ? 'result-missed' : '';
-        var label = r.status === 'served'     ? 'served'
-                  : r.status === 'not_served' ? 'not served'
-                  : r.status === 'not_come'   ? 'missed' : r.status;
-        var tr = tb.insertRow(-1);
-        if (r.selected) tr.className = 'selected';
-        tr.setAttribute('data-id',   r.id);
-        tr.setAttribute('data-list', 'history');
-        tr.onclick       = function(e) { rowClick(e, this); };
-        tr.oncontextmenu = function(e) {
-            var id = this.getAttribute('data-id');
-            var listName = this.getAttribute('data-list');
-            var data = listName === 'queue' ? queue : history;
-            var alreadySelected = false;
-            for (var k = 0; k < data.length; k++) {
-                if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
-            }
-            if (!alreadySelected) rowClick(e, this);
-            showCtxMenu(e, listName);
-        };
-        var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
-        var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
-        var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
-        var c3 = tr.insertCell(3); c3.innerHTML = escHtml(label);
-        c3.className = cls;
+        var tb = document.getElementById('tbody-history');
+        while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
+        
+        var data = history.slice().reverse();
+        for (var i = 0; i < data.length; i++) {
+            var r = data[i];
+        // for (var i = 0; i < history.length; i++) {
+            // var r     = history[i];
+            var cls   = r.status === 'served'     ? 'result-served'
+                    : r.status === 'not_served' ? 'result-notserved'
+                    : r.status === 'not_come'   ? 'result-missed' : '';
+            var label = r.status === 'served'     ? 'обслужен'
+                    : r.status === 'not_served' ? 'не обслужен'
+                    : r.status === 'not_come'   ? 'не пришел' : r.status;
+            var tr = tb.insertRow(-1);
+            if (r.selected) tr.className = 'selected';
+            tr.setAttribute('data-id',   r.id);
+            tr.setAttribute('data-list', 'history');
+            tr.onclick       = function(e) { rowClick(e, this); };
+            tr.oncontextmenu = function(e) {
+                var id = this.getAttribute('data-id');
+                var listName = this.getAttribute('data-list');
+                var data = listName === 'queue' ? queue : history;
+                var alreadySelected = false;
+                for (var k = 0; k < data.length; k++) {
+                    if (data[k].id === id && data[k].selected) { alreadySelected = true; break; }
+                }
+                if (!alreadySelected) rowClick(e, this);
+                showCtxMenu(e, listName);
+            };
+            var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
+            var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
+            var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
+            var c3 = tr.insertCell(3); c3.innerHTML = escHtml(label);
+            c3.className = cls;
+        }
     }
-}
 
     // ── Row selection — now uses data-id instead of data-idx ──────────────
     function rowClick(e, tr) {
@@ -576,7 +576,40 @@
 
     function ctxGong() {
         hideCtxMenu();
-        try { window.external.Gong(); } catch(e) {}
+
+        var data = ctxTargetList === 'queue' ? queue : history;
+        var ticket = null;
+            var data = ctxTargetList === 'queue' ? queue : history;
+    var ticket = null;
+        // get LAST selected
+        for (var i = data.length - 1; i >= 0; i--) {
+            if (data[i].selected) {
+                ticket = data[i];
+                break;
+            }
+        }
+
+        if (!ticket) return;
+
+        try {
+            window.external.Gong(String(ticket.number));
+        } catch(e) {
+            alert('Gong failed: ' + e.message);
+            return;
+        }
+
+        lastSelected = null;
+    }
+
+    function getSelectedTickets(listName) {
+        var data = listName === 'queue' ? queue : history;
+        var out = [];
+
+        for (var i = 0; i < data.length; i++) {
+            if (data[i].selected) out.push(data[i]);
+        }
+
+        return out;
     }
 
     function ctxPrint() {
@@ -703,7 +736,8 @@
             sel.innerHTML = '<option value="">— No printer —</option>';
             for (var i = 0; i < list.length; i++) {
                 var opt = document.createElement('option');
-                opt.value = list[i]; opt.text = list[i];
+                opt.value   = list[i];           // name in value — used for printing
+                opt.innerHTML = escHtml(list[i]); // IE8-safe display
                 if (list[i] === selectedValue) opt.selected = true;
                 sel.appendChild(opt);
             }
@@ -735,17 +769,46 @@
         document.getElementById('voiceSkin').value = window.external.GetConfig('voiceSkin');
         document.getElementById('volume').value = window.external.GetConfig('volume');
         document.getElementById('gongSkin').value = window.external.GetConfig('gongSkin');
+        fillSkinSelects();
         var dbgVal = window.external.GetConfig('printDebug');
-        document.getElementById('debugBtn').innerText = 'Debug Print: ' + (dbgVal || 'false');
+        document.getElementById('debugBtn').innerText = 'Превью печати: ' + (dbgVal || 'false');
     }
 
     function toggleDebug() {
         var cur  = window.external.GetConfig('printDebug');
         var next = (cur === 'true') ? 'false' : 'true';
         window.external.SaveConfig('printDebug', next);
-        document.getElementById('debugBtn').innerText = 'Debug Print: ' + next;
+        document.getElementById('debugBtn').innerText = 'Превью печати: ' + next;
     }
 
+    function fillSkinSelects() {
+        fillSelect('voiceSkin', window.external.GetVoiceSkins(),
+                window.external.GetConfig('voiceSkin'));
+        fillSelect('gongSkin',  window.external.GetGongSkins(),
+                window.external.GetConfig('gongSkin'));
+    }
+
+    function fillSelect(id, json, savedValue) {
+        try {
+            var list = eval('(' + json + ')');
+            var sel  = document.getElementById(id);
+            sel.innerHTML = '';
+            for (var i = 0; i < list.length; i++) {
+                var opt = document.createElement('option');
+                opt.value     = list[i];
+                opt.innerHTML = escHtml(list[i]);
+                if (list[i] === savedValue) opt.selected = true;
+                sel.appendChild(opt);
+            }
+            if (sel.options.length === 0) {
+                sel.innerHTML = '<option value="">— none found —</option>';
+            }
+        } catch(e) {
+            document.getElementById(id).innerHTML =
+                '<option value="">Error: ' + e.message + '</option>';
+        }
+    }
+    
     // ── Batch ──────────────────────────────────────────────────────────────
     function loadTypes() {
         var sel = document.getElementById('ticketType');
@@ -779,7 +842,7 @@
             status.innerText = 'Select a type and valid count.'; return;
         }
         status.style.display = 'block'; status.style.color = '#333';
-        status.innerText = 'Creating ' + count + ' ticket(s)...';
+        status.innerText = 'Создание ' + count + ' билетов...';
         var ok = 0, fail = 0;
         for (var i = 0; i < count; i++) {
             try {
@@ -788,7 +851,7 @@
             } catch(e) { fail++; }
         }
         status.style.color = fail > 0 ? 'red' : 'green';
-        status.innerText = 'Done: ' + ok + ' created' + (fail > 0 ? ', ' + fail + ' failed.' : '.');
+        status.innerText = 'Готово: ' + ok + ' создано' + (fail > 0 ? ', ' + fail + ' ошибок.' : '.');
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -865,9 +928,9 @@
     border:1px solid #bbb; border-radius:3px;
     box-shadow:2px 2px 6px rgba(0,0,0,0.2);
     z-index:999; min-width:160px; font-size:13px;">
-    <div class="ctx-item" id="ctx-gong"   onclick="ctxGong()">&#9679; Gong for selected</div>
-    <div class="ctx-item" id="ctx-delete" onclick="ctxDelete()">&#10007; Delete selected</div>
-    <div class="ctx-item" id="ctx-print" onclick="ctxPrint()">&#128438; Print selected</div>
+    <div class="ctx-item" id="ctx-gong"   onclick="ctxGong()">&#9679; Гонг для выбранного</div>
+    <div class="ctx-item" id="ctx-delete" onclick="ctxDelete()">X Удалить</div>
+    <div class="ctx-item" id="ctx-print" onclick="ctxPrint()">↓ Печать</div>
 </div>
 
 <style>

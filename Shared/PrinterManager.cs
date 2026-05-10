@@ -25,8 +25,8 @@ namespace Tokenizer.Shared
         public static Font  NumberFont    = new Font("Arial", 40, FontStyle.Bold);
         public static Font  SmallFont     = new Font("Arial", 10);
 
-        public static string HeaderText   = "Queue number:";
-        public static string DateLabel    = "Date and time:";
+        public static string HeaderText   = "Номер в очереди:";
+        public static string DateLabel    = "Дата и время выдачи:";
         public static string DateFormat   = "dd.MM.yyyy HH:mm";
 
         public static float HeaderSpacing = 40f;
