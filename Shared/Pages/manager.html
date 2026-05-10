@@ -191,7 +191,36 @@
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
         <button class="btn" onclick="toggleDebug()" id="debugBtn">Превью печати: ...</button>
 
-        <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
+        <h4 style="margin-top:18px;margin-bottom:4px;">Print layout:</h4>
+
+        <label>Header text:</label>
+        <input type="text" id="print_headerText" />
+
+        <label>Date label:</label>
+        <input type="text" id="print_dateLabel" />
+
+        <label>Date format:</label>
+        <input type="text" id="print_dateFormat" placeholder="dd.MM.yyyy HH:mm" style="width:160px;" />
+
+        <label>Header font size:</label>
+        <input type="text" id="print_headerSize" placeholder="14" style="width:80px;" />
+
+        <label>Number font size:</label>
+        <input type="text" id="print_numberSize" placeholder="40" style="width:80px;" />
+
+        <label>Small font size:</label>
+        <input type="text" id="print_smallSize"  placeholder="10" style="width:80px;" />
+
+        <label>Margin left / top:</label>
+        <input type="text" id="print_marginLeft" placeholder="10" style="width:60px;" />
+        <input type="text" id="print_marginTop"  placeholder="20" style="width:60px;" />
+
+        <label>Header / number / label spacing:</label>
+        <input type="text" id="print_headerSpacing" placeholder="40" style="width:60px;" />
+        <input type="text" id="print_numberSpacing" placeholder="80" style="width:60px;" />
+        <input type="text" id="print_labelSpacing"  placeholder="20" style="width:60px;" />
+        
+        <!-- <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div> -->
         <label>Голос:</label>
         <select id="voiceSkin">
             <option value="Default">Стандарт</option>
@@ -759,6 +788,17 @@
         window.external.SaveConfig('voiceSkin', document.getElementById('voiceSkin').value);
         window.external.SaveConfig('gongSkin', document.getElementById('gongSkin').value);
         window.external.SetVolume(document.getElementById('volume').value);
+
+        // in saveConfig():
+        var printKeys = ['print_headerText','print_dateLabel','print_dateFormat',
+                        'print_headerSize','print_numberSize','print_smallSize',
+                        'print_marginLeft','print_marginTop',
+                        'print_headerSpacing','print_numberSpacing','print_labelSpacing'];
+        for (var i = 0; i < printKeys.length; i++) {
+            var el = document.getElementById(printKeys[i]);
+            if (el) window.external.SaveConfig(printKeys[i], el.value);
+        }
+        
         var s = document.getElementById('status');
         s.style.display = 'block';
         setTimeout(function() { s.style.display = 'none'; }, 2000);
@@ -773,6 +813,19 @@
         document.getElementById('volume').value = window.external.GetConfig('volume');
         document.getElementById('gongSkin').value = window.external.GetConfig('gongSkin');
         fillSkinSelects();
+
+        
+
+        // in loadCurrent():
+        var printKeys = ['print_headerText','print_dateLabel','print_dateFormat',
+                        'print_headerSize','print_numberSize','print_smallSize',
+                        'print_marginLeft','print_marginTop',
+                        'print_headerSpacing','print_numberSpacing','print_labelSpacing'];
+        for (var i = 0; i < printKeys.length; i++) {
+            var el = document.getElementById(printKeys[i]);
+            if (el) el.value = window.external.GetConfig(printKeys[i]);
+        }
+        
         var dbgVal = window.external.GetConfig('printDebug');
         document.getElementById('debugBtn').innerText = 'Превью печати: ' + (dbgVal || 'false');
     }

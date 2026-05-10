@@ -82,28 +82,58 @@ namespace Tokenizer.Shared
         }
         private static void DrawTicket(Graphics g, Ticket ticket)
         {
-            float x = TicketLayout.MarginLeft;
-            float y = TicketLayout.MarginTop;
+            // load from config every print — changes take effect immediately
+            float marginLeft    = ParseFloat(Config.Get("print_marginLeft"),   10f);
+            float marginTop     = ParseFloat(Config.Get("print_marginTop"),    20f);
+            float headerSpacing = ParseFloat(Config.Get("print_headerSpacing"), 40f);
+            float numberSpacing = ParseFloat(Config.Get("print_numberSpacing"), 80f);
+            float labelSpacing  = ParseFloat(Config.Get("print_labelSpacing"),  20f);
+
+            float headerSize    = ParseFloat(Config.Get("print_headerSize"),   14f);
+            float numberSize    = ParseFloat(Config.Get("print_numberSize"),   40f);
+            float smallSize     = ParseFloat(Config.Get("print_smallSize"),    10f);
+
+            string headerText   = OrDefault(Config.Get("print_headerText"), "Номер в очереди:");
+            string dateLabel    = OrDefault(Config.Get("print_dateLabel"),  "Дата и время выдачи:");
+            string dateFormat   = OrDefault(Config.Get("print_dateFormat"), "dd.MM.yyyy HH:mm");
+
+            Font headerFont = new Font("Arial", headerSize, FontStyle.Bold);
+            Font numberFont = new Font("Arial", numberSize, FontStyle.Bold);
+            Font smallFont  = new Font("Arial", smallSize);
+
+            float x = marginLeft;
+            float y = marginTop;
 
             string number = !string.IsNullOrEmpty(ticket.DisplayNumber)
                 ? ticket.DisplayNumber
                 : ticket.Number.ToString("D3");
 
-            // Header
-            g.DrawString(TicketLayout.HeaderText, TicketLayout.HeaderFont, Brushes.Black, x, y);
-            y += TicketLayout.HeaderSpacing;
+            g.DrawString(headerText, headerFont, Brushes.Black, x, y);
+            y += headerSpacing;
 
-            // Big number
-            g.DrawString(number, TicketLayout.NumberFont, Brushes.Black, x, y);
-            y += TicketLayout.NumberSpacing;
+            g.DrawString(number, numberFont, Brushes.Black, x, y);
+            y += numberSpacing;
 
-            // Date label
-            g.DrawString(TicketLayout.DateLabel, TicketLayout.SmallFont, Brushes.Black, x, y);
-            y += TicketLayout.LabelSpacing;
+            g.DrawString(dateLabel, smallFont, Brushes.Black, x, y);
+            y += labelSpacing;
 
-            // Date value
-            g.DrawString(ticket.Timestamp.ToString(TicketLayout.DateFormat),
-                         TicketLayout.SmallFont, Brushes.Black, x, y);
+            g.DrawString(ticket.Timestamp.ToString(dateFormat), smallFont, Brushes.Black, x, y);
+
+            headerFont.Dispose();
+            numberFont.Dispose();
+            smallFont.Dispose();
+        }
+
+        private static float ParseFloat(string s, float def)
+        {
+            float v;
+            return float.TryParse(s, System.Globalization.NumberStyles.Float,
+                                System.Globalization.CultureInfo.InvariantCulture, out v) ? v : def;
+        }
+
+        private static string OrDefault(string s, string def)
+        {
+            return string.IsNullOrEmpty(s) ? def : s;
         }
     }
 }
