@@ -9,8 +9,9 @@ namespace Tokenizer
         {
             this.SuspendLayout();
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Name = "Form1";
-            this.Text = "Form1";
+            this.Name = "ButtonsApp";
+            this.Text = "ButtonsApp";
+            // this.Icon = Properties.Resources.icon;
             this.ResumeLayout(false);
         }
     }

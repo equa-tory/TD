@@ -226,6 +226,7 @@ namespace Tokenizer
         public Form1()
         {
             InitializeComponent();
+            // this.Icon = new System.Drawing.Icon(Application.StartupPath + @"\ManagerApp.ico");
 
             WebBrowser browser = new WebBrowser();
             browser.Dock = DockStyle.Fill;

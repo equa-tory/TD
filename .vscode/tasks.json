@@ -2,6 +2,14 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Build Release All",
+      "type": "shell",
+      // "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe TokenizerDesktop.sln",
+      "command": "taskkill /IM Manager.exe /F ;& taskkill /IM Buttons.exe /F ;& C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ManagerApp\\Manager.csproj /p:Configuration=Release ; C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe ButtonsApp\\Buttons.csproj /p:Configuration=Release",
+      // "group": { "kind": "build", },
+      "problemMatcher": "$msCompile"
+    },
+    {
       "label": "Build All",
       "type": "shell",
       // "command": "C:\\Windows\\Microsoft.NET\\Framework\\v3.5\\MSBuild.exe TokenizerDesktop.sln",
@@ -24,7 +32,7 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "Run Buttons App",
+      "label": "Debug Buttons App",
       "type": "shell",
       "command": "${workspaceFolder}\\bin\\Debug\\Buttons.exe",
       "dependsOn": "Build Buttons App",
@@ -32,7 +40,7 @@
       "group": { "kind": "build" },
     },
     {
-      "label": "Run Manager App",
+      "label": "Debug Manager App",
       "type": "shell",
       "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe",
       "dependsOn": "Build Manager App",
@@ -40,10 +48,19 @@
       "group": { "kind": "build", },
     },
     {
-      "label": "Run All",
+      "label": "Debug All",
       "type": "shell",
       "command": "${workspaceFolder}\\bin\\Debug\\Manager.exe ;& ${workspaceFolder}\\bin\\Debug\\Buttons.exe",
       "dependsOn": "Build All",
+      "problemMatcher": [],
+      "group": { "kind": "build", },
+    },
+
+    {
+      "label": "Release All",
+      "type": "shell",
+      "command": "${workspaceFolder}\\bin\\Release\\Manager.exe ;& ${workspaceFolder}\\bin\\Release\\Buttons.exe",
+      "dependsOn": "Build Release All",
       "problemMatcher": [],
       "group": { "kind": "build", },
     }

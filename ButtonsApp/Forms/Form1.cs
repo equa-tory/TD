@@ -60,6 +60,7 @@ namespace Tokenizer
         public Form1()
         {
             InitializeComponent();
+            // this.Icon = new System.Drawing.Icon(Application.StartupPath + @"\ButtonsApp.ico");
             
             // full screen
             // this.FormBorderStyle = FormBorderStyle.None;
