@@ -193,7 +193,7 @@
                 id="volume"
                 min="0"
                 max="100"
-                value="50"
+                value="100"
                 style="flex:1;"
             />
             <span id="volumeValue">0-100</span>
@@ -389,8 +389,12 @@ function renderQueue() {
 function renderHistory() {
     var tb = document.getElementById('tbody-history');
     while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
-    for (var i = 0; i < history.length; i++) {
-        var r     = history[i];
+    
+    var data = history.slice().reverse();
+    for (var i = 0; i < data.length; i++) {
+        var r = data[i];
+    // for (var i = 0; i < history.length; i++) {
+        // var r     = history[i];
         var cls   = r.status === 'served'     ? 'result-served'
                   : r.status === 'not_served' ? 'result-notserved'
                   : r.status === 'not_come'   ? 'result-missed' : '';

@@ -202,7 +202,7 @@ namespace Tokenizer
             string volume = Config.Get("volume");
             if (string.IsNullOrEmpty(volume))
             {
-                Config.Set("volume", "50");
+                Config.Set("volume", "100");
             }
 
             // refresh rate
