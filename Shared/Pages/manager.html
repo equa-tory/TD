@@ -178,6 +178,7 @@
         <h3 style="margin-bottom:8px;">Конфиг</h3>
         
         
+        <h4 style="margin-top:18px;margin-bottom:4px;">API:</h4>
 
         <label>Сслыка на API:</label>
         <input type="text" id="apiUrl" placeholder="http://example.com/api" />
@@ -185,41 +186,43 @@
         <label>Частота Обновления билетов (мс):</label>
         <input type="text" id="refreshRate" placeholder="3000" />
         
+        <h4 style="margin-top:18px;margin-bottom:4px;">Печать:</h4>
+
         <label>Принтер:</label>
         <select id="printer"><option value="">— Без принтера —</option></select>
         
         <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div>
         <button class="btn" onclick="toggleDebug()" id="debugBtn">Превью печати: ...</button>
 
-        <h4 style="margin-top:18px;margin-bottom:4px;">Print layout:</h4>
 
-        <label>Header text:</label>
+        <label>Текст заголовка:</label>
         <input type="text" id="print_headerText" />
 
-        <label>Date label:</label>
+        <label>Текст над датой:</label>
         <input type="text" id="print_dateLabel" />
 
-        <label>Date format:</label>
+        <label>Формат даты:</label>
         <input type="text" id="print_dateFormat" placeholder="dd.MM.yyyy HH:mm" style="width:160px;" />
 
-        <label>Header font size:</label>
+        <label>Размер шрифта заголовка:</label>
         <input type="text" id="print_headerSize" placeholder="14" style="width:80px;" />
 
-        <label>Number font size:</label>
+        <label>Размер шрифта номера:</label>
         <input type="text" id="print_numberSize" placeholder="40" style="width:80px;" />
 
-        <label>Small font size:</label>
+        <label>Размер мелкого шрифта:</label>
         <input type="text" id="print_smallSize"  placeholder="10" style="width:80px;" />
 
-        <label>Margin left / top:</label>
+        <label>Margin лево / верх:</label>
         <input type="text" id="print_marginLeft" placeholder="10" style="width:60px;" />
         <input type="text" id="print_marginTop"  placeholder="20" style="width:60px;" />
 
-        <label>Header / number / label spacing:</label>
+        <label>Заголовок / номер / время отступы:</label>
         <input type="text" id="print_headerSpacing" placeholder="40" style="width:60px;" />
         <input type="text" id="print_numberSpacing" placeholder="80" style="width:60px;" />
         <input type="text" id="print_labelSpacing"  placeholder="20" style="width:60px;" />
         
+        <h4 style="margin-top:18px;margin-bottom:4px;">Звук:</h4>
         <!-- <div id="printerDebug" style="color:red;font-size:12px;margin-top:4px;"></div> -->
         <label>Голос:</label>
         <select id="voiceSkin">
