@@ -56,7 +56,17 @@
             wrap.style.height = h + '%';
 
             var btn = document.createElement('button');
-            btn.innerHTML = escHtml(title);
+            btn.innerHTML = '<b>'+escHtml(title)+'</b>';
+            // btn.fontSize = window.external.GetConfig('buttonFontSize') || 24;
+            if (window.external.GetConfig('buttonFontSize'))
+                btn.style.fontSize = window.external.GetConfig('buttonFontSize') + 'px';
+            else
+                btn.style.fontSize = '24px';
+            // bold
+            if (window.external.GetConfig('boldButtons') === 'True')
+                btn.style.fontWeight = 'bold';
+            else
+                btn.style.fontWeight = 'normal';
 
             (function(tid, ttitle, b) {
                 b.onclick = function() {
@@ -115,6 +125,21 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
     }
+
+    // document.onkeydown = function(e) {
+    //     e = e || window.event;
+
+    //     var code = e.keyCode || e.which;
+
+    //     if (code === 122) { // del
+    //         if (e.preventDefault)
+    //             e.preventDefault();
+
+    //         var fullscreen = window.external.GetConfig('fullscreen');
+    //         window.external.SaveConfig('fullscreen', !fullscreen);
+    //         window.external.SetFullscreen(!fullscreen);
+    //     }
+    // };
 
     // disable text selection on XP/IE
     document.onselectstart = function() { return false; };

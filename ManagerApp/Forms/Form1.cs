@@ -223,6 +223,9 @@ namespace Tokenizer
 
     public partial class Form1 : Form
     {
+        private bool _isFullscreen = false;
+        private System.Drawing.Rectangle _normalBounds; // saved before going fullscreen
+
         public Form1()
         {
             InitializeComponent();
@@ -237,16 +240,100 @@ namespace Tokenizer
             RestorePosition();
 
             StartConfig();
+
+            if (Config.Get("fullscreen") == "true")
+                SetFullscreen(true);
         }
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.F11)
+            {
+                SetFullscreen(!_isFullscreen);
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
 
+        public void SetFullscreen(bool full)
+        {
+            _isFullscreen = full;
+            Config.Set("fullscreen", full ? "true" : "false");
+
+            if (full)
+            {
+                // save normal bounds before maximizing
+                _normalBounds = this.Bounds;
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState     = FormWindowState.Maximized;
+            }
+            else
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState     = FormWindowState.Normal;
+                // restore normal bounds
+                if (_normalBounds != System.Drawing.Rectangle.Empty)
+                    this.Bounds = _normalBounds;
+            }
+        }
+
+        private void RestorePosition()
+        {
+            try
+            {
+                int x = int.Parse(Config.Get("windowX"));
+                int y = int.Parse(Config.Get("windowY"));
+                int w = int.Parse(Config.Get("windowW"));
+                int h = int.Parse(Config.Get("windowH"));
+
+                System.Drawing.Point p = new System.Drawing.Point(x, y);
+                bool onScreen = false;
+                foreach (Screen s in Screen.AllScreens)
+                    if (s.WorkingArea.Contains(p)) { onScreen = true; break; }
+
+                if (onScreen)
+                {
+                    this.StartPosition = FormStartPosition.Manual;
+                    this.Location = new System.Drawing.Point(x, y);
+                    this.Size     = new System.Drawing.Size(w, h);
+                    // also init _normalBounds so fullscreen→restore works correctly
+                    _normalBounds = new System.Drawing.Rectangle(x, y, w, h);
+                }
+            }
+            catch { }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            // always save NORMAL (non-fullscreen) bounds
+            System.Drawing.Rectangle bounds = _isFullscreen ? _normalBounds : this.Bounds;
+            Config.Set("windowX", bounds.X.ToString());
+            Config.Set("windowY", bounds.Y.ToString());
+            Config.Set("windowW", bounds.Width.ToString());
+            Config.Set("windowH", bounds.Height.ToString());
+            base.OnFormClosing(e);
+        }
 
         private void StartConfig() {
             // api ip
             string apiUrl = Config.Get("apiUrl");
             if (string.IsNullOrEmpty(apiUrl))
             {
-                Config.Set("apiUrl", "http://192.168..:9009");
+                Config.Set("apiUrl", "http://192.168.0.172:9009");
+            }
+
+            // buttonFontSize
+            string buttonFontSize = Config.Get("buttonFontSize");
+            if (string.IsNullOrEmpty(buttonFontSize))
+            {
+                Config.Set("buttonFontSize", "24");
+            }
+
+            // boldButtons
+            string boldButtons = Config.Get("boldButtons");
+            if (string.IsNullOrEmpty(boldButtons))
+            {
+                Config.Set("boldButtons", "True");
             }
 
             // Voice skin
@@ -307,43 +394,5 @@ namespace Tokenizer
                 catch { }
             });
         }
-
-        private void RestorePosition()
-        {
-            try
-            {
-                int x = int.Parse(Config.Get("windowX"));
-                int y = int.Parse(Config.Get("windowY"));
-                int w = int.Parse(Config.Get("windowW"));
-                int h = int.Parse(Config.Get("windowH"));
-
-                // check the saved position is still on a valid screen
-                System.Drawing.Point p = new System.Drawing.Point(x, y);
-                bool onScreen = false;
-                foreach (Screen s in Screen.AllScreens)
-                {
-                    if (s.WorkingArea.Contains(p)) { onScreen = true; break; }
-                }
-
-                if (onScreen)
-                {
-                    this.StartPosition = FormStartPosition.Manual;
-                    this.Location = new System.Drawing.Point(x, y);
-                    this.Size     = new System.Drawing.Size(w, h);
-                }
-            }
-            catch { } // no saved position yet — use default
-        }
-        
-        protected override void OnFormClosing(FormClosingEventArgs e)
-        {
-            // save position and size
-            Config.Set("windowX", this.Location.X.ToString());
-            Config.Set("windowY", this.Location.Y.ToString());
-            Config.Set("windowW", this.Size.Width.ToString());
-            Config.Set("windowH", this.Size.Height.ToString());
-            base.OnFormClosing(e);
-        }
-
     }
 }

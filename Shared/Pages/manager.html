@@ -133,7 +133,7 @@
 </div>
 
 <!-- ══ Manager page ══════════════════════════════════════════════════════ -->
-<div id="page-manager" class="page active">
+<div id="page-manager" class="page active" style="display:block;">
 
     <div id="currentTicket">
         <!-- Show current ticket id, time -->
@@ -155,13 +155,13 @@
     </div>
 
     <div id="list-area">
-        <div class="tab-list active" id="list-queue">
+        <div class="tab-list active" id="list-queue" style="display:block;">
             <table>
                 <thead><tr><th>#</th><th>Номер</th><th>Создан в</th><th>Статус</th></tr></thead>
                 <tbody id="tbody-queue"></tbody>
             </table>
         </div>
-        <div class="tab-list" id="list-history">
+        <div class="tab-list" id="list-history" style="display:none;">
             <table>
                 <thead><tr><th>#</th><th>Номер</th><th>Вызван в</th><th>Результат</th></tr></thead>
                 <tbody id="tbody-history"></tbody>
@@ -173,7 +173,7 @@
 </div>
 
 <!-- ══ Config page ═══════════════════════════════════════════════════════ -->
-<div id="page-config" class="page">
+<div id="page-config" class="page" style="display:none;">
     <div class="form-page">
         <h3 style="margin-bottom:8px;">Конфиг</h3>
         
@@ -186,6 +186,16 @@
         <label>Частота Обновления билетов (мс):</label>
         <input type="text" id="refreshRate" placeholder="3000" />
         
+        <h4 style="margin-top:18px;margin-bottom:4px;">Приложение Buttons:</h4>
+
+        <label>Размер шрифта кнопок:</label>
+        <input type="text" id="buttonFontSize" placeholder="24" />
+
+        <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+            <input type="checkbox" id="boldButtons" />
+            Жирный шрифт кнопок
+        </label>
+
         <h4 style="margin-top:18px;margin-bottom:4px;">Печать:</h4>
 
         <label>Принтер:</label>
@@ -196,10 +206,10 @@
 
 
         <label>Текст заголовка:</label>
-        <input type="text" id="print_headerText" />
+        <input type="text" id="print_headerText" placeholder="Номер в очереди:" />
 
         <label>Текст над датой:</label>
-        <input type="text" id="print_dateLabel" />
+        <input type="text" id="print_dateLabel" placeholder="Дата и время выдачи:" />
 
         <label>Формат даты:</label>
         <input type="text" id="print_dateFormat" placeholder="dd.MM.yyyy HH:mm" style="width:160px;" />
@@ -276,7 +286,7 @@
 </div>
 
 <!-- ══ Batch page ════════════════════════════════════════════════════════ -->
-<div id="page-batch" class="page">
+<div id="page-batch" class="page" style="display:none;">
     <div class="form-page">
         <h3 style="margin-bottom:8px;">Создать батч</h3>
         <label>Тип билета:</label>
@@ -403,10 +413,10 @@
     function showPage(name) {
         var ids = ['manager','config','batch'];
         for (var i = 0; i < ids.length; i++) {
-            document.getElementById('page-' + ids[i]).className = 'page';
+            document.getElementById('page-' + ids[i]).style.display = 'none';
             document.getElementById('nav-'  + ids[i]).className = '';
         }
-        document.getElementById('page-' + name).className = 'page active';
+        document.getElementById('page-' + name).style.display = 'block';
         document.getElementById('nav-'  + name).className = 'active';
 
         if (name === 'manager') { startRefresh(); }
@@ -417,10 +427,10 @@
     }
 
     function showTab(name) {
-        document.getElementById('list-queue').className   = 'tab-list' + (name==='queue'   ? ' active' : '');
-        document.getElementById('list-history').className = 'tab-list' + (name==='history' ? ' active' : '');
-        document.getElementById('tab-queue').className    = 'tab-btn'  + (name==='queue'   ? ' active' : '');
-        document.getElementById('tab-history').className  = 'tab-btn'  + (name==='history' ? ' active' : '');
+        document.getElementById('list-queue').style.display   = name === 'queue'   ? 'block' : 'none';
+        document.getElementById('list-history').style.display = name === 'history' ? 'block' : 'none';
+        document.getElementById('tab-queue').className        = name === 'queue'   ? 'tab-btn active' : 'tab-btn';
+        document.getElementById('tab-history').className      = name === 'history' ? 'tab-btn active' : 'tab-btn';
         lastSelected = null;
     }
 
@@ -784,6 +794,8 @@
 
     function saveConfig() {
         window.external.SaveConfig('apiUrl',  document.getElementById('apiUrl').value);
+        window.external.SaveConfig('buttonFontSize', document.getElementById('buttonFontSize').value);
+        window.external.SaveConfig('boldButtons', document.getElementById('boldButtons').checked);
         window.external.SaveConfig('printer', document.getElementById('printer').value);
         window.external.SaveConfig('refreshRate', document.getElementById('refreshRate').value);
         window.external.SaveConfig('loginSound', document.getElementById('loginSound').checked);
@@ -809,6 +821,8 @@
 
     function loadCurrent() { // TODO: add others
         document.getElementById('apiUrl').value = window.external.GetConfig('apiUrl');
+        document.getElementById('buttonFontSize').value = window.external.GetConfig('buttonFontSize');
+        document.getElementById('boldButtons').checked = window.external.GetConfig('boldButtons') === 'True';
         fillPrinters(window.external.GetConfig('printer'));
         document.getElementById('refreshRate').value = window.external.GetConfig('refreshRate');
         document.getElementById('loginSound').checked = window.external.GetConfig('loginSound') === 'True';

@@ -11,20 +11,6 @@ namespace Tokenizer
         public void SaveConfig(string key, string value) { Config.Set(key, value); }
         public string GetConfig(string key) { return Config.Get(key); }
 
-        public void SetFullscreen(bool full)
-        {
-            Form owner = Form.ActiveForm ?? Application.OpenForms[0];
-            owner.Invoke((MethodInvoker)delegate {
-                if (full) {
-                    owner.FormBorderStyle = FormBorderStyle.None;
-                    owner.WindowState     = FormWindowState.Maximized;
-                } else {
-                    owner.FormBorderStyle = FormBorderStyle.Sizable;
-                    owner.WindowState     = FormWindowState.Normal;
-                }
-            });
-        }
-
         public string FetchSomething()
         {
             try
@@ -57,6 +43,8 @@ namespace Tokenizer
 
     public partial class Form1 : Form
     {
+        private bool _isFullscreen = false;
+
         public Form1()
         {
             InitializeComponent();
@@ -73,6 +61,36 @@ namespace Tokenizer
             browser.ObjectForScripting = new ScriptManager();
             browser.Url = new Uri("file:///" + Application.StartupPath + @"\Pages\buttons.html");
             RestorePosition();
+
+            if (Config.Get("btnFullscreen") == "true")
+                SetFullscreen(true);
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == Keys.F11)
+            {
+                SetFullscreen(!_isFullscreen);
+                return true; // handled — don't pass to browser
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        public void SetFullscreen(bool full)
+        {
+            _isFullscreen = full;
+            Config.Set("btnFullscreen", full ? "true" : "false");
+
+            if (full)
+            {
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState     = FormWindowState.Maximized;
+            }
+            else
+            {
+                this.FormBorderStyle = FormBorderStyle.Sizable;
+                this.WindowState     = FormWindowState.Normal;
+            }
         }
 
         private void RestorePosition()
