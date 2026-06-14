@@ -99,6 +99,9 @@
         /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
         .tab-list { display: none; flex: 1; overflow-y: auto; }
         .tab-list.active { display: block; }
+        /* when a list has no tickets, hide the scroll strip (keep the tabs) */
+        .tab-list.empty { overflow-y: hidden; }
+        td.empty-msg { color: #999; text-align: center; padding: 18px 12px; }
 
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         thead { position: sticky; top: 0; background: #e8e8e8; }
@@ -157,7 +160,7 @@
     <div id="list-area">
         <div class="tab-list active" id="list-queue" style="display:block;">
             <table>
-                <thead><tr><th>#</th><th>Номер</th><th>Создан в</th><th>Статус</th></tr></thead>
+                <thead><tr><th>#</th><th>Номер</th><th>Создан в</th><th>Назначен на</th><th>Кто</th><th>Статус</th></tr></thead>
                 <tbody id="tbody-queue"></tbody>
             </table>
         </div>
@@ -332,6 +335,8 @@
                     id:       String(t.id || i),
                     number:   t.name || t.number || t.display_number || ('T-' + i),
                     calledAt: t.created_at ? formatDate(t.created_at) : '',
+                    assignedAt: t.timestamp ? formatDate(t.timestamp) : '—',
+                    who:      t.user ? t.user : 'неизвестен',
                     status:   status,
                     selected: false
                 };
@@ -416,7 +421,9 @@
             document.getElementById('page-' + ids[i]).style.display = 'none';
             document.getElementById('nav-'  + ids[i]).className = '';
         }
-        document.getElementById('page-' + name).style.display = 'block';
+        // config/batch use flex so .form-page (flex:1; overflow-y:auto) can scroll;
+        // manager keeps block to avoid disturbing its working layout
+        document.getElementById('page-' + name).style.display = (name === 'manager') ? 'block' : 'flex';
         document.getElementById('nav-'  + name).className = 'active';
 
         if (name === 'manager') { startRefresh(); }
@@ -459,6 +466,19 @@
     function renderQueue() {
         var tb = document.getElementById('tbody-queue');
         while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
+
+        var listEl = document.getElementById('list-queue');
+        if (queue.length === 0) {
+            listEl.className = 'tab-list active empty';
+            var er = tb.insertRow(-1);
+            var ec = er.insertCell(0);
+            ec.colSpan = 6;
+            ec.className = 'empty-msg';
+            ec.innerHTML = 'Очередь пуста';
+            return;
+        }
+        listEl.className = 'tab-list active';
+
         for (var i = 0; i < queue.length; i++) {
             var r  = queue[i];
             var tr = tb.insertRow(-1);
@@ -479,16 +499,30 @@
             };
             var c0 = tr.insertCell(0); c0.innerHTML = (i+1);
             var c1 = tr.insertCell(1); c1.innerHTML = '<b>' + escHtml(r.number) + '</b>';
-            var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);
-            var c3 = tr.insertCell(3); c3.innerHTML = 'в очереди';
-            c3.className = 'result-pending';
+            var c2 = tr.insertCell(2); c2.innerHTML = escHtml(r.calledAt);     // Создан в
+            var c3 = tr.insertCell(3); c3.innerHTML = escHtml(r.assignedAt);   // Назначен на
+            var c4 = tr.insertCell(4); c4.innerHTML = escHtml(r.who);          // Кто
+            var c5 = tr.insertCell(5); c5.innerHTML = 'в очереди';
+            c5.className = 'result-pending';
         }
     }
 
     function renderHistory() {
         var tb = document.getElementById('tbody-history');
         while (tb.rows.length > 0) tb.deleteRow(0); // IE-safe clear
-        
+
+        var listEl = document.getElementById('list-history');
+        if (history.length === 0) {
+            listEl.className = 'tab-list empty';
+            var er = tb.insertRow(-1);
+            var ec = er.insertCell(0);
+            ec.colSpan = 4;
+            ec.className = 'empty-msg';
+            ec.innerHTML = 'История пуста';
+            return;
+        }
+        listEl.className = 'tab-list';
+
         var data = history.slice().reverse();
         for (var i = 0; i < data.length; i++) {
             var r = data[i];

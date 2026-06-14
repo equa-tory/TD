@@ -88,14 +88,22 @@ namespace Tokenizer.Shared
             p.Add("ticket_type_id", id.ToString());
 
             string response = Post("/ticket/", p);  // POST with empty body, params in query string
+            // The API auto-assigns the first available time slot (generate_timestamp)
+            // and returns it as "timestamp"; "created_at" is the issue time.
 
+            DateTime created   = DateTime.Now;  // issue time (fallback = now)
+            DateTime timestamp = DateTime.Now;  // assigned slot (fallback = now)
             string displayNumber = title;
             int number = 0;
 
             try
             {
-                string numVal  = JsonUtil.GetString(response, "number");
-                string nameVal = JsonUtil.GetString(response, "name");
+                string timestampVal = JsonUtil.GetString(response, "timestamp");   // assigned slot
+                string createdVal   = JsonUtil.GetString(response, "created_at");  // issue time
+                string numVal       = JsonUtil.GetString(response, "number");
+                string nameVal      = JsonUtil.GetString(response, "name");
+                if (!string.IsNullOrEmpty(timestampVal)) timestamp = DateTime.Parse(timestampVal);
+                if (!string.IsNullOrEmpty(createdVal))   created   = DateTime.Parse(createdVal);
                 if (!string.IsNullOrEmpty(numVal))  number        = Convert.ToInt32(numVal);
                 if (!string.IsNullOrEmpty(nameVal)) displayNumber = nameVal;
             }
@@ -105,7 +113,8 @@ namespace Tokenizer.Shared
             ticket.Type          = "";
             ticket.Number        = number;
             ticket.DisplayNumber = displayNumber;
-            ticket.Timestamp     = DateTime.Now;
+            ticket.Created       = created;     // когда выдан (печать)
+            ticket.Timestamp     = timestamp;   // на какой слот записан
 
             PrinterManager pm = new PrinterManager(printerName);
             pm.PrintTicket(ticket, printDebug);

@@ -10,7 +10,8 @@ namespace Tokenizer.Shared
         public string Type;
         public int Number;
         public string DisplayNumber;
-        public DateTime Timestamp;
+        public DateTime Timestamp;   // assigned time slot (which slot it was booked on)
+        public DateTime Created;     // issue time (when the ticket was printed)
     }
 
     // =====================================================================
@@ -96,6 +97,8 @@ namespace Tokenizer.Shared
             string headerText   = OrDefault(Config.Get("print_headerText"), "Номер в очереди:");
             string dateLabel    = OrDefault(Config.Get("print_dateLabel"),  "Дата и время выдачи:");
             string dateFormat   = OrDefault(Config.Get("print_dateFormat"), "dd.MM.yyyy HH:mm");
+            string timestampLabel    = "Дата и время назначения:";
+            // string timestampFormat   = "dd.MM.yyyy HH:mm";
 
             Font headerFont = new Font("Arial", headerSize, FontStyle.Bold);
             Font numberFont = new Font("Arial", numberSize, FontStyle.Bold);
@@ -114,9 +117,15 @@ namespace Tokenizer.Shared
             g.DrawString(number, numberFont, Brushes.Black, x, y);
             y += numberSpacing;
 
+            // --- Issue date/time (when the ticket was printed) ---
             g.DrawString(dateLabel, smallFont, Brushes.Black, x, y);
             y += labelSpacing;
+            g.DrawString(ticket.Created.ToString(dateFormat), smallFont, Brushes.Black, x, y);
+            y += labelSpacing;
 
+            // --- Assigned time slot (which slot it was booked on) ---
+            g.DrawString(timestampLabel, smallFont, Brushes.Black, x, y);
+            y += labelSpacing;
             g.DrawString(ticket.Timestamp.ToString(dateFormat), smallFont, Brushes.Black, x, y);
 
             headerFont.Dispose();
