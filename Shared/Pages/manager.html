@@ -5,7 +5,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { -ms-user-select: none; user-select: none; font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: flex; flex-direction: column; }
+        body { -ms-user-select: none; user-select: none; font-family: Segoe UI, Arial; background: #f0f0f0; height: 100vh; display: block; display: flex; flex-direction: column; }
 
         /* -- Menu -- */
         #menubar { background: #2c2c2c; width: 100%; white-space: nowrap; overflow: hidden; }
@@ -18,7 +18,7 @@
         #menubar button.active { background: #555; }
 
         .page { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
-        .page.active { display: flex; }
+        .page.active { display: block; display: flex; }
 
         #currentTicket {
             display: none;
@@ -31,7 +31,7 @@
 
         /* ── Action bar ── */
         #actionbar {
-            display: flex;
+            display: block; display: flex;
             align-items: center;
             justify-content: space-between;
             background: #fff;
@@ -53,7 +53,7 @@
         #btn-next:hover { background: #005fa3; }
         #btn-next:active { background: #004c85; }
 
-        .action-group { display: flex; gap: 6px; }
+        .action-group { display: block; display: flex; gap: 6px; }
         #actionbar button {
             border: 1px solid #bbb;
             background: #f5f5f5;
@@ -77,7 +77,7 @@
 
         /* ── Tabs ── */
         #tabs-bar {
-            display: flex;
+            display: block; display: flex;
             background: #fff;
             border-bottom: 1px solid #ccc;
             flex-shrink: 0;
@@ -95,7 +95,7 @@
         .tab-btn.active { border-bottom-color: #0078d4; color: #0078d4; font-weight: bold; }
 
         /* ── List ── */
-        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: row; min-height: 0; }
+        #list-area { flex: 1; overflow: hidden; display: block; display: flex; flex-direction: row; min-height: 0; }
         /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
         .tab-list { display: none; flex: 1; overflow-y: auto; min-height: 0; }
         .tab-list.active { display: block; }
@@ -194,7 +194,7 @@
         <label>Размер шрифта кнопок:</label>
         <input type="text" id="buttonFontSize" placeholder="24" />
 
-        <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+        <label style="margin-top:12px; display:block; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="boldButtons" />
             Жирный шрифт кнопок
         </label>
@@ -265,7 +265,7 @@
         <button class="btn" onclick="(window.external.OpenSkins())" id="openSkinsBtn">Открыть звуки</button>
         
         <!-- Login sound toggle -->
-        <label style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+        <label style="margin-top:12px; display:block; display:flex; align-items:center; gap:8px;">
             <input type="checkbox" id="loginSound" />
             Звук при запуске
         </label>
@@ -275,7 +275,7 @@
             Громкость звуков:
         </label>
 
-        <div style="display:flex;align-items:center;gap:10px;">
+        <div style="display:block;display:flex;align-items:center;gap:10px;">
             <input
                 type="range"
                 id="volume"
@@ -429,12 +429,18 @@
     function showPage(name) {
         var ids = ['manager','config','batch'];
         for (var i = 0; i < ids.length; i++) {
-            document.getElementById('page-' + ids[i]).style.display = 'none';
-            document.getElementById('nav-'  + ids[i]).className = '';
+            var pg = document.getElementById('page-' + ids[i]);
+            pg.className = 'page';               // remove active class
+            pg.style.display = 'none';           // IE8-safe hide
+            document.getElementById('nav-' + ids[i]).className = '';
         }
-        // all pages use flex so their scrollable child (.tab-list / .form-page) can shrink and scroll
-        document.getElementById('page-' + name).style.display = 'flex';
-        document.getElementById('nav-'  + name).className = 'active';
+        // clear inline display and let the stylesheet decide:
+        //   IE8  → .page.active { display:block } (first declaration)
+        //   modern → .page.active { display:flex }  (last declaration wins)
+        var active = document.getElementById('page-' + name);
+        active.className = 'page active';
+        active.style.display = '';               // never assign 'flex' - IE8 "Invalid argument"
+        document.getElementById('nav-' + name).className = 'active';
 
         if (name === 'manager') { startRefresh(); }
         else                    { stopRefresh();  }
