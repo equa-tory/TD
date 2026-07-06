@@ -95,6 +95,7 @@ namespace Tokenizer.Shared
             DateTime timestamp = DateTime.Now;  // assigned slot (fallback = now)
             string displayNumber = title;
             int number = 0;
+            int position = 0;
 
             try
             {
@@ -102,10 +103,12 @@ namespace Tokenizer.Shared
                 string createdVal   = JsonUtil.GetString(response, "created_at");  // issue time
                 string numVal       = JsonUtil.GetString(response, "number");
                 string nameVal      = JsonUtil.GetString(response, "name");
+                string positionVal  = JsonUtil.GetString(response, "position");
                 if (!string.IsNullOrEmpty(timestampVal)) timestamp = DateTime.Parse(timestampVal);
                 if (!string.IsNullOrEmpty(createdVal))   created   = DateTime.Parse(createdVal);
                 if (!string.IsNullOrEmpty(numVal))  number        = Convert.ToInt32(numVal);
                 if (!string.IsNullOrEmpty(nameVal)) displayNumber = nameVal;
+                if (!string.IsNullOrEmpty(positionVal)) Int32.TryParse(positionVal, out position);
             }
             catch { }
 
@@ -115,6 +118,7 @@ namespace Tokenizer.Shared
             ticket.DisplayNumber = displayNumber;
             ticket.Created       = created;     // когда выдан (печать)
             ticket.Timestamp     = timestamp;   // на какой слот записан
+            ticket.Position      = position;    // место в очереди
 
             PrinterManager pm = new PrinterManager(printerName);
             pm.PrintTicket(ticket, printDebug);

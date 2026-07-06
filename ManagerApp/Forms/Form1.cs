@@ -40,6 +40,24 @@ namespace Tokenizer
             catch (Exception ex) { return "{\"error\":\"" + ex.Message.Replace("\"","'") + "\"}"; }
         }
 
+        public string GetSettings()
+        {
+            try   { return ApiManager.Get("/settings/"); }
+            catch (Exception ex) { return "{\"error\":\"" + ex.Message.Replace("\"","'") + "\"}"; }
+        }
+
+        public string SaveSetting(string key, string value)
+        {
+            try
+            {
+                Dictionary<string, string> p = new Dictionary<string, string>();
+                p.Add("key", key);
+                p.Add("value", value);
+                return ApiManager.Post("/settings/", p);
+            }
+            catch (Exception ex) { return "error:" + ex.Message; }
+        }
+
         public string BatchPress(string typeId)
         {
             try
@@ -157,18 +175,32 @@ namespace Tokenizer
             Process.Start("explorer.exe", Application.StartupPath + @"\Audio\");
         }
 
-        public string PrintTicket(string id, string title)
+        public string PrintTicket(string id, string title, string createdIso, string timestampIso, string position)
         {
             try
             {
                 string printer = Config.Get("printer");
                 bool   debug   = Config.Get("printDebug") == "true";
 
+                DateTime created;
+                if (string.IsNullOrEmpty(createdIso) || !DateTime.TryParse(createdIso, out created))
+                    created = DateTime.Now;
+
+                DateTime timestamp;
+                if (string.IsNullOrEmpty(timestampIso) || !DateTime.TryParse(timestampIso, out timestamp))
+                    timestamp = DateTime.Now;
+
+                int pos;
+                if (!Int32.TryParse(position, out pos))
+                    pos = 0;
+
                 Ticket ticket = new Ticket();
                 ticket.Type          = "";
                 ticket.Number        = 0;
                 ticket.DisplayNumber = title;  // use the display name directly
-                ticket.Timestamp     = DateTime.Now;
+                ticket.Created       = created;
+                ticket.Timestamp     = timestamp;
+                ticket.Position      = pos;
 
                 PrinterManager pm = new PrinterManager(printer);
                 pm.PrintTicket(ticket, debug);

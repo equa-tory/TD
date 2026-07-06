@@ -12,6 +12,7 @@ namespace Tokenizer.Shared
         public string DisplayNumber;
         public DateTime Timestamp;   // assigned time slot (which slot it was booked on)
         public DateTime Created;     // issue time (when the ticket was printed)
+        public int Position;         // 1-based place in queue (0 = unknown/not printed)
     }
 
     // =====================================================================
@@ -98,6 +99,7 @@ namespace Tokenizer.Shared
             string dateLabel    = OrDefault(Config.Get("print_dateLabel"),  "Дата и время выдачи:");
             string dateFormat   = OrDefault(Config.Get("print_dateFormat"), "dd.MM.yyyy HH:mm");
             string timestampLabel    = "Дата и время назначения:";
+            string positionText = OrDefault(Config.Get("print_positionText"), "Вы {0}й в очереди");
             // string timestampFormat   = "dd.MM.yyyy HH:mm";
 
             Font headerFont = new Font("Arial", headerSize, FontStyle.Bold);
@@ -116,6 +118,13 @@ namespace Tokenizer.Shared
 
             g.DrawString(number, numberFont, Brushes.Black, x, y);
             y += numberSpacing;
+
+            // --- Queue position (how many are ahead) ---
+            if (ticket.Position > 0)
+            {
+                g.DrawString(string.Format(positionText, ticket.Position), smallFont, Brushes.Black, x, y);
+                y += labelSpacing;
+            }
 
             // --- Issue date/time (when the ticket was printed) ---
             g.DrawString(dateLabel, smallFont, Brushes.Black, x, y);

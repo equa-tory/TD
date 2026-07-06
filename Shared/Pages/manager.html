@@ -17,7 +17,7 @@
         #menubar button:hover  { background: #444; }
         #menubar button.active { background: #555; }
 
-        .page { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        .page { display: none; flex: 1; flex-direction: column; overflow: hidden; min-height: 0; }
         .page.active { display: flex; }
 
         #currentTicket {
@@ -95,9 +95,9 @@
         .tab-btn.active { border-bottom-color: #0078d4; color: #0078d4; font-weight: bold; }
 
         /* ── List ── */
-        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: row; }
+        #list-area { flex: 1; overflow: hidden; display: flex; flex-direction: row; min-height: 0; }
         /* #list-area { display: none; white-space: nowrap; overflow: hidden; } TODO: trying to make in one line */
-        .tab-list { display: none; flex: 1; overflow-y: auto; }
+        .tab-list { display: none; flex: 1; overflow-y: auto; min-height: 0; }
         .tab-list.active { display: block; }
         /* when a list has no tickets, hide the scroll strip (keep the tabs) */
         .tab-list.empty { overflow-y: hidden; }
@@ -136,7 +136,7 @@
 </div>
 
 <!-- ══ Manager page ══════════════════════════════════════════════════════ -->
-<div id="page-manager" class="page active" style="display:block;">
+<div id="page-manager" class="page active">
 
     <div id="currentTicket">
         <!-- Show current ticket id, time -->
@@ -198,6 +198,14 @@
             <input type="checkbox" id="boldButtons" />
             Жирный шрифт кнопок
         </label>
+
+        <h4 style="margin-top:18px;margin-bottom:4px;">Очередь:</h4>
+
+        <label>Позиция в очереди (для печати "Вы Nй в очереди"):</label>
+        <select id="queuePositionScope">
+            <option value="global">Общая очередь (все типы)</option>
+            <option value="type">По типу билета</option>
+        </select>
 
         <h4 style="margin-top:18px;margin-bottom:4px;">Печать:</h4>
 
@@ -336,6 +344,9 @@
                     number:   t.name || t.number || t.display_number || ('T-' + i),
                     calledAt: t.created_at ? formatDate(t.created_at) : '',
                     assignedAt: t.timestamp ? formatDate(t.timestamp) : '—',
+                    rawCreated:  t.created_at || '',
+                    rawAssigned: t.timestamp  || '',
+                    position:    t.position   || 0,
                     who:      t.user ? t.user : 'неизвестен',
                     status:   status,
                     selected: false
@@ -421,9 +432,8 @@
             document.getElementById('page-' + ids[i]).style.display = 'none';
             document.getElementById('nav-'  + ids[i]).className = '';
         }
-        // config/batch use flex so .form-page (flex:1; overflow-y:auto) can scroll;
-        // manager keeps block to avoid disturbing its working layout
-        document.getElementById('page-' + name).style.display = (name === 'manager') ? 'block' : 'flex';
+        // all pages use flex so their scrollable child (.tab-list / .form-page) can shrink and scroll
+        document.getElementById('page-' + name).style.display = 'flex';
         document.getElementById('nav-'  + name).className = 'active';
 
         if (name === 'manager') { startRefresh(); }
@@ -704,7 +714,11 @@
         if (!ticket) { alert('No ticket selected.'); return; }
 
         try {
-            var result = window.external.PrintTicket(ticket.id, ticket.number);
+            var result = window.external.PrintTicket(
+                ticket.id, ticket.number,
+                ticket.rawCreated || '', ticket.rawAssigned || '',
+                String(ticket.position || 0)
+            );
             if (result && result.indexOf('error') >= 0) alert('Print error: ' + result);
         } catch(e) {
             alert('PrintTicket failed: ' + e.message);
@@ -838,6 +852,10 @@
         window.external.SaveConfig('gongSkin', document.getElementById('gongSkin').value);
         window.external.SetVolume(document.getElementById('volume').value);
 
+        try {
+            window.external.SaveSetting('QUEUE_POSITION_SCOPE', document.getElementById('queuePositionScope').value);
+        } catch(e) { /* backend settings are best-effort */ }
+
         // in saveConfig():
         var printKeys = ['print_headerText','print_dateLabel','print_dateFormat',
                         'print_headerSize','print_numberSize','print_smallSize',
@@ -865,7 +883,11 @@
         document.getElementById('gongSkin').value = window.external.GetConfig('gongSkin');
         fillSkinSelects();
 
-        
+        try {
+            var raw = window.external.GetSettings();
+            var s   = eval('(' + raw + ')');
+            document.getElementById('queuePositionScope').value = s.QUEUE_POSITION_SCOPE || 'global';
+        } catch(e) { /* backend settings are best-effort */ }
 
         // in loadCurrent():
         var printKeys = ['print_headerText','print_dateLabel','print_dateFormat',
