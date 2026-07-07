@@ -93,21 +93,31 @@ namespace Tokenizer.Shared
 
             DateTime created   = DateTime.Now;  // issue time (fallback = now)
             DateTime timestamp = DateTime.Now;  // assigned slot (fallback = now)
-            string displayNumber = title;
+            string displayNumber = "";          // real ticket number (e.g. "Ë-0001"); title is only a last-resort fallback
+            bool hasSlot = false;
             int number = 0;
+            int position = 0;
 
             try
             {
                 string timestampVal = JsonUtil.GetString(response, "timestamp");   // assigned slot
                 string createdVal   = JsonUtil.GetString(response, "created_at");  // issue time
                 string numVal       = JsonUtil.GetString(response, "number");
-                string nameVal      = JsonUtil.GetString(response, "name");
-                if (!string.IsNullOrEmpty(timestampVal)) timestamp = DateTime.Parse(timestampVal);
+                string nameVal      = JsonUtil.GetString(response, "name");        // ticket number, NOT the type title
+                string positionVal  = JsonUtil.GetString(response, "position");
+                if (!string.IsNullOrEmpty(timestampVal)) { timestamp = DateTime.Parse(timestampVal); hasSlot = true; }
                 if (!string.IsNullOrEmpty(createdVal))   created   = DateTime.Parse(createdVal);
                 if (!string.IsNullOrEmpty(numVal))  number        = Convert.ToInt32(numVal);
                 if (!string.IsNullOrEmpty(nameVal)) displayNumber = nameVal;
+                if (!string.IsNullOrEmpty(positionVal)) Int32.TryParse(positionVal, out position);
             }
             catch { }
+
+            // never print the kiosk button's type title (e.g. "Сдача Зачёта").
+            // if "name" failed to parse for any reason, fall back to the bare number
+            // (numeric field, immune to quoting/encoding issues) before ever touching title.
+            if (string.IsNullOrEmpty(displayNumber) && number > 0) displayNumber = number.ToString("D4");
+            if (string.IsNullOrEmpty(displayNumber)) displayNumber = title;
 
             Ticket ticket = new Ticket();
             ticket.Type          = "";
@@ -115,6 +125,8 @@ namespace Tokenizer.Shared
             ticket.DisplayNumber = displayNumber;
             ticket.Created       = created;     // когда выдан (печать)
             ticket.Timestamp     = timestamp;   // на какой слот записан
+            ticket.Position      = position;    // место в очереди
+            ticket.HasSlot       = hasSlot;      // true только для типов со слотом (напр. debt)
 
             PrinterManager pm = new PrinterManager(printerName);
             pm.PrintTicket(ticket, printDebug);
