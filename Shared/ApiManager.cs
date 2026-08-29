@@ -105,11 +105,22 @@ namespace Tokenizer.Shared
                 string numVal       = JsonUtil.GetString(response, "number");
                 string nameVal      = JsonUtil.GetString(response, "name");        // ticket number, NOT the type title
                 string positionVal  = JsonUtil.GetString(response, "position");
-                if (!string.IsNullOrEmpty(timestampVal)) { timestamp = DateTime.Parse(timestampVal); hasSlot = true; }
-                if (!string.IsNullOrEmpty(createdVal))   created   = DateTime.Parse(createdVal);
-                if (!string.IsNullOrEmpty(numVal))  number        = Convert.ToInt32(numVal);
+
+                // parse the identity fields FIRST and with non-throwing methods:
+                // a bad/missing "timestamp" (e.g. null for no-slot types) must not
+                // stop "name"/"number"/"position" from being read.
                 if (!string.IsNullOrEmpty(nameVal)) displayNumber = nameVal;
+                if (!string.IsNullOrEmpty(numVal))      Int32.TryParse(numVal, out number);
                 if (!string.IsNullOrEmpty(positionVal)) Int32.TryParse(positionVal, out position);
+
+                DateTime parsed;
+                if (!string.IsNullOrEmpty(createdVal) && DateTime.TryParse(createdVal, out parsed))
+                    created = parsed;   // else keep the "now" fallback
+                if (!string.IsNullOrEmpty(timestampVal) && DateTime.TryParse(timestampVal, out parsed))
+                {
+                    timestamp = parsed;
+                    hasSlot   = true;   // true only for time-slot types (e.g. debt)
+                }
             }
             catch { }
 

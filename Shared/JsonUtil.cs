@@ -23,10 +23,13 @@ namespace Tokenizer.Shared
             }
             else
             {
-                // numeric / bool value
+                // numeric / bool / null value
                 int end = start;
                 while (end < json.Length && json[end] != ',' && json[end] != '}') end++;
-                return json.Substring(start, end - start).Trim();
+                string raw = json.Substring(start, end - start).Trim();
+                // JSON null -> real null, so callers don't try to parse the literal "null"
+                if (raw == "null") return null;
+                return raw;
             }
         }
     }

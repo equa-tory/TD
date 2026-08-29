@@ -71,17 +71,66 @@ namespace Tokenizer.Shared
 
                 owner.Invoke((MethodInvoker)delegate
                 {
-                    PrintPreviewDialog dlg = new PrintPreviewDialog();
-                    dlg.Document = doc;
-                    dlg.Width = 800;
-                    dlg.Height = 600;
-                    dlg.ShowDialog(owner);
+                    // PrintPreviewDialog needs a working default printer. On a machine
+                    // with no printers installed it throws InvalidPrinterException — in
+                    // that case (or any other failure) fall back to a plain bitmap window
+                    // so preview still works without a printer.
+                    if (PrinterSettings.InstalledPrinters.Count == 0)
+                    {
+                        ShowBitmapPreview(ticket, owner);
+                        return;
+                    }
+
+                    try
+                    {
+                        PrintPreviewDialog dlg = new PrintPreviewDialog();
+                        dlg.Document = doc;
+                        dlg.Width = 800;
+                        dlg.Height = 600;
+                        dlg.ShowDialog(owner);
+                    }
+                    catch
+                    {
+                        ShowBitmapPreview(ticket, owner);
+                    }
                 });
             }
             else
             {
                 doc.Print();
             }
+        }
+
+        // Printer-less fallback preview: render the ticket into a bitmap and show it
+        // in a simple window. Uses the same DrawTicket() as real printing, so layout
+        // and the print_* config keys stay in sync. Pixel coordinates are approximate
+        // (no printer = no real page geometry).
+        private static void ShowBitmapPreview(Ticket ticket, Form owner)
+        {
+            Bitmap bmp = new Bitmap(400, 600);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.White);
+                DrawTicket(g, ticket);
+            }
+
+            Form win = new Form();
+            win.Text = "Превью талона (принтер не найден)";
+            win.StartPosition = FormStartPosition.CenterParent;
+            win.ClientSize = new Size(bmp.Width, bmp.Height);
+            win.FormBorderStyle = FormBorderStyle.FixedDialog;
+            win.MaximizeBox = false;
+            win.MinimizeBox = false;
+
+            PictureBox pb = new PictureBox();
+            pb.Dock = DockStyle.Fill;
+            pb.SizeMode = PictureBoxSizeMode.AutoSize;
+            pb.Image = bmp;
+            win.Controls.Add(pb);
+
+            win.ShowDialog(owner);
+            win.Dispose();
+            bmp.Dispose();
         }
         private static void DrawTicket(Graphics g, Ticket ticket)
         {
